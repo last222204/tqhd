@@ -1,7 +1,7 @@
-/* 화면 그리기만 한다. 계산은 전부 core.js (TQHD) 에 있다. */
+/* 화면 그리기만 한다. 판정은 core.js (TQHD), 문구는 ui.js (TQHD_UI). */
 (function () {
   "use strict";
-  var T = window.TQHD, cfg = window.TQHD_CONFIG || {};
+  var T = window.TQHD, U = window.TQHD_UI, cfg = window.TQHD_CONFIG || {};
   var POLL_MS = 30 * 1000, STATE_MS = 10 * 60 * 1000, FETCH_TIMEOUT = 10 * 1000;
 
   // localhost 에서만: ?now=ISO 로 시계 바꾸기, ?quotes=URL 로 가짜 시세
@@ -15,206 +15,206 @@
   var state = null, quotes = null, lastTry = null, lastOk = null, stateErr = null;
   var $ = function (id) { return document.getElementById(id); };
 
+  // ── 아이콘 (인라인 SVG 다섯 개) ───────────
+  function svg(d) { return '<svg class="ico" viewBox="0 0 16 16" aria-hidden="true">' + d + "</svg>"; }
+  var ICON = {
+    fx: svg('<path d="M2.5 5.5h10l-2.5-2.5"/><path d="M13.5 10.5h-10l2.5 2.5"/>'),
+    fut: svg('<path d="M2 12.5l3.5-3.5 3 2L14 4.5"/><path d="M10.5 4.5H14V8"/>'),
+    ma: svg('<path d="M2 6h12"/><path d="M2 10.5h12"/>'),
+    rsi: svg('<path d="M3 13V9.5"/><path d="M6.3 13V5"/><path d="M9.7 13V7.5"/><path d="M13 13V3"/>'),
+    clock: svg('<circle cx="8" cy="8" r="6"/><path d="M8 4.8V8l2.3 1.4"/>')
+  };
+
   // ── 숫자 표기 ─────────────────────────────
+  function N(s) { return '<span class="num">' + s + "</span>"; }
   function usd(x, d) { return x == null || !isFinite(x) ? "–" : "$" + x.toLocaleString("en-US", { minimumFractionDigits: d == null ? 2 : d, maximumFractionDigits: d == null ? 2 : d }); }
   function num(x, d) { return x == null || !isFinite(x) ? "–" : x.toLocaleString("en-US", { minimumFractionDigits: d, maximumFractionDigits: d }); }
   function pct(x) { if (x == null || !isFinite(x)) return "–"; var v = x * 100; return (v > 0 ? "+" : v < 0 ? "−" : "") + Math.abs(v).toFixed(2) + "%"; }
+  function arrowPct(x) { return (x > 0 ? "↑ " : x < 0 ? "↓ " : "") + pct(x); }
   function cls(x) { return x > 0 ? "up" : x < 0 ? "down" : ""; }
   var WD = ["일", "월", "화", "수", "목", "금", "토"];
   function kstDay(t) { var d = new Date(t + 9 * 3600e3); return (d.getUTCMonth() + 1) + "/" + d.getUTCDate() + "(" + WD[d.getUTCDay()] + ")"; }
   function kstHM(t) { return T.fmtKst(t, false); }
-  function when(t) {           // 오늘이면 시각만, 아니면 날짜까지 (한국 시간)
-    if (t == null) return "–";
-    return kstDay(t) === kstDay(now()) ? kstHM(t) : T.fmtKst(t);
-  }
+  function when(t) { if (t == null) return "–"; return kstDay(t) === kstDay(now()) ? kstHM(t) : T.fmtKst(t); }
   function left(ms) { var m = Math.max(0, Math.round(ms / 60000)); return (m >= 60 ? Math.floor(m / 60) + "시간 " : "") + (m % 60) + "분"; }
-  function sClass(s) { return "s-" + (s || "off"); }
+  function md(iso) { return iso.slice(5).replace("-", "/"); }
+  function isEarly(s) { return s && Date.parse(s.close_utc) - Date.parse(s.open_utc) < 6.5 * 3600e3 - 1; }
+
+  // ── 마스코트 (파일이 있을 때만) ───────────
+  var mascotOk = {};
+  function mascot(s) {
+    var img = $("mascot");
+    if (!s) { img.hidden = true; return; }
+    if (mascotOk[s] === undefined) {
+      mascotOk[s] = null;
+      var probe = new Image();
+      probe.onload = function () { mascotOk[s] = true; render(); };
+      probe.onerror = function () { mascotOk[s] = false; };
+      probe.src = "assets/mascot-" + s + ".png";
+    }
+    if (mascotOk[s]) { img.src = "assets/mascot-" + s + ".png"; img.hidden = false; } else img.hidden = true;
+  }
 
   // ── 배너 ──────────────────────────────────
   function confLine(v) {
-    return '<div class="conf">어제 종가 <span class="st">' + v.confirmed.text + "</span> (확정 · " +
-      v.confirmed.date.slice(5).replace("-", "/") + " 종가 " + usd(v.confirmed.close) + ")</div>";
+    return '<div class="conf">어제 종가 <span class="v">' + U.word(v.confirmed.state, v.confirmed.weight) + "</span> · 확정 " +
+      N(md(v.confirmed.date) + " " + usd(v.confirmed.close)) + "</div>";
   }
-
-  function sessionNote(s) {
-    if (!s) return "";
-    var o = Date.parse(s.open_utc), c = Date.parse(s.close_utc);
-    var early = c - o < 6.5 * 3600e3 - 1;
-    return early ? " · 조기 폐장 " + kstHM(c) + " 마감" : "";
+  function badgeHtml(b) { return b ? '<span class="badge"><span class="em">' + b.emoji + "</span>" + b.text + "</span>" : ""; }
+  function bigState(s, w) {
+    return '<div class="state"><span class="em">' + U.EMOJI[s] + '</span><span class="w">' + U.word(s, w).replace(/ (\d+%)$/, "") +
+      "</span>" + '<span class="wt num">' + (s === "night" ? "현금" : "TQQQ " + U.weightOf(s, w) + "%") + "</span></div>";
   }
 
   function banner(v) {
-    var el = $("banner"), h = "";
+    var el = $("banner"), h = "", st = null;
     if (v.mode === "live" || v.mode === "closed") {
       var L = v.live, c = Date.parse(v.session.close_utc);
+      var timeLeft = L && L.closing ? "장 마감" : "마감 " + kstHM(c) + "까지 " + left(c - now()) + (isEarly(v.session) ? " · 조기 폐장" : "");
       if (L && L.ok) {
-        var e = L.eval;
-        el.className = "banner " + sClass(e.state);
-        h += '<div class="row"><span class="lbl">' + (L.closing ? "오늘 종가" : "지금") + '</span><span class="big">' + L.text +
-             '</span><span class="act">' + T.action(e.state, e.weight) + "</span></div>";
+        st = L.eval.state;
+        h += '<div class="lbl">' + (L.closing ? "오늘 종가" : "지금") + "</div>" + bigState(L.eval.state, L.eval.weight);
         h += confLine(v);
-        h += L.differs
-          ? '<div class="diff">⚠ ' + (L.closing ? "오늘 종가로 " : "지금 가격이면 종가에 ") + v.confirmed.text + " → " + L.text + " 로 바뀜</div>"
-          : '<div class="same">어제 종가 상태와 같음</div>';
-        h += '<div class="meta">QQQ ' + usd(L.price) + " · " + when(L.t) + " KST 가격 기준 · " +
-             (L.closing ? "장 마감 · 종가 자동 기록 대기 (매일 07:00)" : "마감 " + kstHM(c) + "까지 " + left(c - now()) + sessionNote(v.session)) + "</div>";
+        if (L.differs) h += '<div class="diff">종가에 ' + U.word(v.confirmed.state, v.confirmed.weight) + " → " + U.word(L.eval.state, L.eval.weight) + "</div>";
+        h += '<div class="meta">' + ICON.clock + N("QQQ " + usd(L.price) + " · " + when(L.t)) + " · " + N(timeLeft) + "</div>";
       } else {
-        el.className = "banner s-off";
-        h += '<div class="row"><span class="lbl">지금</span><span class="big">실시간 판정 없음</span></div>';
+        h += badgeHtml(U.badge(v));
+        h += '<div class="state"><span class="w off">실시간 판정 없음</span></div>';
         h += '<div class="off-msg">' + (L ? L.text : "실시간 연결 끊김, 전일 종가 기준만 유효") + "</div>";
         h += confLine(v);
-        h += '<div class="meta">장중 · 마감 ' + kstHM(c) + "까지 " + left(c - now()) + sessionNote(v.session) + "</div>";
+        h += '<div class="meta">' + ICON.clock + N(timeLeft) + "</div>";
       }
     } else if (v.mode === "gap") {
-      h = gapCard(v);
-      el.className = "banner gap " + (v.gap && v.gap.ok ? sClass(v.gap.eval.state) : "s-off");
+      var g = v.gap;
+      h += badgeHtml(U.badge(v));
+      if (v.next) h += '<div class="meta">다음 개장 ' + N(kstDay(Date.parse(v.next.open_utc)) + " " + kstHM(Date.parse(v.next.open_utc))) +
+        (isEarly(v.next) ? " · 조기 폐장 " + N(kstHM(Date.parse(v.next.close_utc))) + " 마감" : "") + "</div>";
+      if (g.ok) {
+        st = g.eval.state;
+        h += '<div class="grid">';
+        h += '<div><div class="k">' + ICON.fut + 'NQ 선물</div><div class="v num">' + num(g.nq.price, 2) + ' <small class="' + cls(g.nq.chg) + '">' + pct(g.nq.chg) + "</small></div></div>";
+        h += '<div><div class="k">예상 시가</div><div class="v num">' + usd(g.qqqOpen) + "</div></div>";
+        h += '<div><div class="k">예상 상태</div><div class="v"><span class="em">' + U.EMOJI[g.eval.state] + "</span> " + U.word(g.eval.state, g.eval.weight) +
+             " <small>" + (g.differs ? '<span class="down">바뀜</span>' : "동일") + "</small></div></div>";
+        h += '<div><div class="k">' + ICON.rsi + '예상 RSI2</div><div class="v num">' + num(g.eval.rsi2, 1) + "</div></div>";
+        h += "</div>";
+        h += '<div class="meta">' + ICON.clock + N("선물 " + when(g.nq.t)) + "</div>";
+        if (g.frozen) h += '<div class="off-msg">' + g.frozenText + "</div>";
+      } else {
+        h += '<div class="off-msg">' + g.text + "</div>";
+      }
+      h += confLine(v);
     } else {
-      el.className = "banner s-off";
-      h += '<div class="row"><span class="lbl">지금</span><span class="big">기준 데이터 멈춤</span></div>';
-      h += '<div class="off-msg">자동 갱신이 멈춰 지금 상태를 계산하지 않습니다</div>';
+      h += badgeHtml(U.badge(v));
+      h += '<div class="state"><span class="w off">지금 상태 계산 안 함</span></div>';
       h += confLine(v);
     }
-    el.innerHTML = h;
+    el.className = "banner" + (st ? " s-" + st : "");
+    $("bannerBody").innerHTML = h;
+    mascot(st);
   }
 
-  function gapIcon(r) {
-    if (!r) return "⏸️";
-    if (r.kind === "holiday") return r.name === "추수감사절" ? "🏈" : r.name === "크리스마스" ? "🎄" : "🗓️";
-    if (r.kind === "weekend") return "🗓️";
-    if (r.kind === "premarket") return "⏰";
-    return "⏸️";
-  }
-
-  function gapCard(v) {
-    var g = v.gap, r = v.reason, h = "";
-    var title = r && r.kind === "holiday" ? "미국 현물장 휴장 (" + r.name + ")"
-              : r && r.kind === "weekend" ? "미국 현물장 휴장 (주말)"
-              : r && r.kind === "premarket" ? "미국 현물장 장 시작 전" : "미국 현물장 마감 후";
-    h += '<div class="head">' + gapIcon(r) + " " + title + "</div>";
-    if (v.next) h += '<div class="sub">다음 개장 ' + kstDay(Date.parse(v.next.open_utc)) + " " + kstHM(Date.parse(v.next.open_utc)) + " KST" + sessionNote(v.next) + "</div>";
-    if (g.ok) {
-      h += '<div class="grid">';
-      h += '<div><div class="k">나스닥 선물 NQ</div><div class="v">' + num(g.nq.price, 2) + ' <small class="' + cls(g.nq.chg) + '">' + pct(g.nq.chg) + "</small></div></div>";
-      h += '<div><div class="k">→ QQQ 예상 시가</div><div class="v">' + usd(g.qqqOpen) + "</div></div>";
-      h += '<div><div class="k">→ 예상 상태</div><div class="v">' + g.text + " <small>" + (g.differs ? '<b class="down">바뀜</b>' : "지금과 동일") + "</small></div></div>";
-      h += '<div><div class="k">→ 예상 RSI2</div><div class="v">' + num(g.eval.rsi2, 1) + "</div></div>";
-      h += "</div>";
-      h += '<div class="meta">선물 ' + when(g.nq.t) + " KST 거래 (야후 약 10분 지연) · 기준 = 전일 마감 시각 " + num(g.nq.ref, 2) + "</div>";
-      if (g.frozen) h += '<div class="frozen">' + g.frozenText + "</div>";
-    } else {
-      h += '<div class="off-msg">' + g.text + "</div>";
-    }
-    h += confLine(v);
-    h += '<div class="note">선물과 현물은 베이시스 차이가 있어 예상치는 어긋날 수 있다. 참고용. (예상 상태 = 예상 시가로 마감한다면)</div>';
-    return h;
+  function todo(v) {
+    var t = U.todayLine(v);
+    var label = v.mode === "closed" && v.live && v.live.ok ? "오늘 종가 기준" : "오늘 할 일";
+    $("todo").innerHTML = '<span class="lbl">' + label + '</span><span class="cmd ' + t.kind + '">' + t.text + "</span>";
   }
 
   // ── 기준선 카드 ───────────────────────────
+  var LABEL = { sma50: "50일선", sma200: "200일선", hunt_half: "절반 15", hunt_full: "전액 5", hunt_exit: "청산 50" };
   function card(v) {
     var el = $("card");
-    if (!v.card) { el.innerHTML = '<h2>QQQ 기준선</h2><div class="prev">기준 데이터가 멈춰 계산하지 않습니다.</div>'; el.className = "card off"; return; }
+    if (!v.card) { el.innerHTML = "<h2><span>" + ICON.ma + "기준선</span></h2>"; return; }
     var c = v.card, ref = c.ref, h = "";
-    el.className = "card" + (c.basisIsPrev ? " off" : "");
-    var refName = !ref ? "실시간 없음 · 전일 종가 기준" : ref.kind === "now" ? "지금 (실시간)" : ref.kind === "close" ? "오늘 종가 (기록 전)" : "예상 시가 (선물 기준)";
-    h += "<h2>QQQ · " + refName + "</h2>";
+    var tag = !ref ? '<span class="tag off">전일 종가</span>' : ref.kind === "now" ? '<span class="tag">실시간</span>'
+            : ref.kind === "close" ? '<span class="tag">오늘 종가</span>' : '<span class="tag">예상 시가</span>';
+    h += "<h2><span>" + ICON.ma + "QQQ 기준선</span>" + tag + "</h2>";
     if (ref) {
-      h += '<div class="px"><span class="p">' + usd(ref.price) + '</span><span class="c ' + cls(c.refChg) + '">' + pct(c.refChg) +
-           '</span><span class="t">' + when(ref.t) + " KST</span></div>";
+      h += '<div class="px"><span class="num num-big">' + usd(ref.price) + '</span><span class="c num ' + cls(c.refChg) + '">' + pct(c.refChg) +
+           '</span><span class="t num">' + when(ref.t) + "</span></div>";
     }
-    h += '<div class="prev">전일 종가 ' + usd(c.prev) + " (" + v.asOf.slice(5).replace("-", "/") + ")</div>";
+    h += '<div class="prev">전일 ' + N(usd(c.prev) + " · " + md(v.asOf)) + "</div>";
 
-    // 상태가 바뀌는 가장 가까운 가격
     var basePrice = ref ? ref.price : c.prev;
-    function chg(x, arrow, word) {
-      if (!x) return '<div><div class="v">' + arrow + " <small>" + word + '</small></div><div class="none">이 방향으로는 안 바뀜</div></div>';
-      return '<div><div class="v ' + cls(x.price / basePrice - 1) + '">' + arrow + " " + pct(x.price / basePrice - 1) + " <small>" + word + "</small>" +
-             '</div><div class="to">' + usd(x.price) + " → " + T.stateText(x.state, x.weight) + "</div></div>";
+    function chg(x, arrow) {
+      if (!x) return '<div><div class="v">' + arrow + '</div><div class="none">안 바뀜</div></div>';
+      var d = x.price / basePrice - 1;
+      return '<div><div class="v num ' + cls(d) + '">' + arrow + " " + pct(d) + '</div><div class="to num">' + usd(x.price) + " → " + U.word(x.state, x.weight) + "</div></div>";
     }
-    h += '<div class="chg">' + chg(c.changes.down, "↓", "내리면") + chg(c.changes.up, "↑", "오르면") + "</div>";
+    h += '<div class="chg">' + chg(c.changes.down, "↓") + chg(c.changes.up, "↑") + "</div>";
 
-    h += '<div class="rh"><span>기준선 · 닿는 가격</span><span>' + (ref ? "현재가 대비" : "전일 종가 대비") + "</span></div>";
-    h += '<div class="rows">';
+    h += '<div class="rh">' + (ref ? "현재가 대비" : "전일 종가 대비") + "</div><div class=\"rows\">";
     c.rows.forEach(function (r, i) {
       var isLine = r.key === "sma50" || r.key === "sma200";
       var d = r.fromRef != null ? r.fromRef : r.fromPrev;
-      var word = isLine ? (d < 0 ? "이탈까지" : "회복까지") : "";
-      var sub = (isLine ? "선 " + usd(r.line) + " · 닿는 가격 " : "가격 ") + "<b>" + usd(r.price) + "</b>";
-      if (r.fromRef != null) sub += " · 전일 " + pct(r.fromPrev);
-      sub += " · TQQQ≈" + usd(r.tqqq);
-      h += '<div class="r' + (i === 2 ? " sep" : "") + '"><div class="n">' + r.label + (word ? " <small>" + word + "</small>" : "") +
-           '</div><div class="d ' + cls(d) + '">' + pct(d) + '</div><div class="s">' + sub + "</div></div>";
+      var sub = [];
+      if (isLine) sub.push("닿는 " + usd(r.price));
+      if (r.fromRef != null) sub.push("전일 " + pct(r.fromPrev));
+      sub.push("TQQQ " + usd(r.tqqq));
+      h += '<div class="r' + (i === 2 ? " sep" : "") + '"><span class="n">' + LABEL[r.key] + '</span><span class="p num">' + usd(isLine ? r.line : r.price) +
+           '</span><span class="d num ' + cls(d) + '">' + arrowPct(d) + '</span><span class="s num">' + sub.join(" · ") + "</span></div>";
     });
     h += "</div>";
-    h += '<div class="rsi"><span class="n">RSI2 (' + (ref ? (ref.kind === "open" ? "예상" : "지금") : "확정") + ')</span><span class="v">' +
-         num(ref ? c.rsi2 : v.confirmed.rsi2, 1) + "</span></div>";
-    h += '<div class="basis">$ 는 전부 <b>배당조정(수정주가) 종가</b> 기준이라 증권사 차트의 이동평균 $ 와 다를 수 있다. ' +
-         "판단은 오른쪽 % (" + (ref ? "현재가" : "전일 종가") + " 대비, 그만큼 움직여 마감하면)로. TQQQ≈ = 전일 종가 × (1 + 3 × QQQ 변화율).</div>";
+    h += '<div class="rsi"><span class="n">' + ICON.rsi + "RSI2</span><span class=\"v num\">" + num(ref ? c.rsi2 : v.confirmed.rsi2, 1) +
+         "<small>" + (ref ? (ref.kind === "open" ? "예상" : "지금") : "확정") + "</small></span></div>";
     el.innerHTML = h;
   }
 
   function tqqqCard(v) {
-    var el = $("tqqq"), prev = state.tqqq_prev_close, h = "<h2>TQQQ</h2>";
+    var prev = state.tqqq_prev_close, h = "<h2><span>TQQQ</span>";
     if (v.tqqq) {
-      h += '<div class="px"><span class="p">' + usd(v.tqqq.price) + '</span><span class="c ' + cls(v.tqqq.price / prev - 1) + '">' +
-           pct(v.tqqq.price / prev - 1) + '</span><span class="t">' + when(v.tqqq.t) + " KST</span></div>";
+      h += '<span class="tag">실시간</span></h2><div class="px"><span class="num num-big">' + usd(v.tqqq.price) + '</span><span class="c num ' +
+           cls(v.tqqq.price / prev - 1) + '">' + pct(v.tqqq.price / prev - 1) + '</span><span class="t num">' + when(v.tqqq.t) + "</span></div>";
     } else if (v.gap && v.gap.ok) {
-      h += '<div class="px"><span class="p">≈ ' + usd(v.gap.tqqqOpen) + '</span><span class="c">예상 시가</span></div>';
+      h += '<span class="tag">예상 시가</span></h2><div class="px"><span class="num num-big">' + usd(v.gap.tqqqOpen) + "</span></div>";
     } else {
-      h += '<div class="prev">지금 가격 없음</div>';
+      h += '<span class="tag off">전일 종가</span></h2>';
     }
-    h += '<div class="prev">전일 종가 ' + usd(prev) + "</div>";
-    el.innerHTML = h;
+    h += '<div class="prev">전일 ' + N(usd(prev)) + "</div>";
+    $("tqqq").innerHTML = h;
   }
 
   function fx(v) {
     var f = v.fx;
-    $("fx").innerHTML = f ? "USD/KRW <b>" + num(f.price, 2) + "</b> · " + (f.live ? when(f.t) : f.date.slice(5).replace("-", "/")) : "USD/KRW –";
+    $("fx").innerHTML = ICON.fx + (f ? 'USD/KRW <span class="v num">' + num(f.price, 2) + "</span> " +
+      N(f.live ? when(f.t) : md(f.date)) : "USD/KRW –");
   }
 
   function alerts(v) {
-    $("alerts").innerHTML = v.warnings.map(function (w) { return '<div class="alert">⛔ ' + w + "</div>"; }).join("");
-  }
-
-  function foot(v) {
-    var p = !proxyUrl ? "실시간 프록시 주소 미설정 (assets/config.js)"
-          : lastOk && lastTry === lastOk ? "실시간 연결됨 · " + when(lastOk) + " 받음 (30초마다)"
-          : "실시간 연결 끊김 · 마지막 시도 " + when(lastTry);
-    $("foot").innerHTML = "<b>기준</b> " + v.asOf + " 종가 (" + state.price_basis + ") · 자동 기록 " + when(v.generatedAt) + " KST<br>" +
-      "<b>규칙</b> 50·200일선 하나라도 위(초과) = 낮, 둘 다 같거나 아래 = 밤 · 밤의 비중은 RSI2: &lt; 5 → 100%, 5~15 → 50%, 15~50 → 직전 유지, &gt; 50 → 전량 매도 · 사냥 중 선 회복 = 그대로 낮<br>" +
-      "<b>실시간</b> " + p + (fakeNow != null ? " · <b>시험 시계</b> " + T.fmtKst(now()) : "");
+    $("alerts").innerHTML = v.warnings.map(function (w) { return '<div class="alert">' + w + "</div>"; }).join("");
   }
 
   // ── 밤 비율 ───────────────────────────────
   function regime() {
-    var r = state.night_ratio || {}, h = "<h2>밤 비율 (밤 + 사냥 날의 비중)</h2><div class=\"ratio\">";
+    var r = state.night_ratio || {}, h = "<h2><span>밤 비율</span></h2><div class=\"ratio\">";
     [["1m", "1개월"], ["3m", "3개월"], ["12m", "12개월"]].forEach(function (k) {
-      var x = r[k[0]], c = x == null ? "" : x >= 30 ? "hi" : x < 20 ? "lo" : "";
-      h += '<div class="' + c + '"><div class="k">' + k[1] + '</div><div class="v">' + (x == null ? "–" : x.toFixed(1) + "%") + "</div></div>";
+      var x = r[k[0]];
+      h += '<div><div class="k">' + k[1] + '</div><div class="v num">' + (x == null ? "–" : x.toFixed(1) + "%") + "</div></div>";
     });
-    h += '</div><div class="legend"><span class="lo">10%대</span> → 확장기, 룰이 거의 작동하지 않는 구간<br>' +
-         '<span class="hi">30% 이상</span> → 침체 신호, 룰이 돈을 벌기 시작하는 구간</div>';
+    h += '</div><div class="legend"><span>10%대</span> → 확장기, 룰이 거의 작동하지 않는 구간<br>' +
+         "<span>30% 이상</span> → 침체 신호, 룰이 돈을 벌기 시작하는 구간</div>";
     $("regime").innerHTML = h;
   }
 
-  // ── 최근 60거래일 띠 (history.csv 자동 기록) ──
+  // ── 최근 60거래일 띠 ──────────────────────
   var histSel = null;
   function histLine(r) {
     var d = new Date(r.date + "T12:00:00Z");
-    return (d.getUTCMonth() + 1) + "/" + d.getUTCDate() + "(" + WD[d.getUTCDay()] + ") · QQQ " + usd(r.close) + " · RSI2 " + num(r.rsi2, 1) +
-      " · <b>" + T.stateText(r.state, r.weight) + "</b>" + (r.source === "역산" ? ' <span class="src">역산</span>' : "");
+    return N((d.getUTCMonth() + 1) + "/" + d.getUTCDate()) + "(" + WD[d.getUTCDay()] + ") · " + N("QQQ " + usd(r.close) + " · RSI2 " + num(r.rsi2, 1)) +
+      " · " + U.word(r.state, r.weight) + (r.source === "역산" ? ' <span class="src">역산</span>' : "");
   }
   function hist() {
     var rs = state.recent || [];
-    if (!rs.length) { $("hist").innerHTML = "<h2>최근 상태</h2><div class=\"prev\">기록 없음</div>"; return; }
+    if (!rs.length) { $("hist").innerHTML = ""; return; }
     if (histSel == null || histSel >= rs.length) histSel = rs.length - 1;
-    var h = "<h2>최근 " + rs.length + "거래일 상태 <small>(매일 자동 기록 · 눌러서 보기)</small></h2><div class=\"strip\" id=\"strip\">";
+    var h = "<h2><span>최근 " + rs.length + "거래일</span></h2><div class=\"strip\" id=\"strip\">";
     rs.forEach(function (r, i) {
       h += '<span class="b b-' + r.state + (r.state === "hunt" && r.weight === 100 ? " full" : "") + (i === histSel ? " sel" : "") +
-           '" data-i="' + i + '" title="' + r.date + " " + T.stateText(r.state, r.weight) + '"></span>';
+           '" data-i="' + i + '" title="' + r.date + " " + U.word(r.state, r.weight) + '"></span>';
     });
-    h += '</div><div class="ends"><span>' + rs[0].date.slice(5).replace("-", "/") + "</span><span>" + rs[rs.length - 1].date.slice(5).replace("-", "/") + "</span></div>";
+    h += '</div><div class="ends num"><span>' + md(rs[0].date) + "</span><span>" + md(rs[rs.length - 1].date) + "</span></div>";
     h += '<div class="pick">' + histLine(rs[histSel]) + "</div>";
-    h += '<div class="keys"><span class="b b-day"></span>낮 <span class="b b-night"></span>밤 <span class="b b-hunt"></span>사냥 50% <span class="b b-hunt full"></span>사냥 100%</div>';
+    h += '<div class="keys"><span class="b b-day"></span>낮<span class="b b-night"></span>밤<span class="b b-hunt"></span>사냥 50%<span class="b b-hunt full"></span>사냥 100%</div>';
     $("hist").innerHTML = h;
   }
   function pickAt(x, y) {
@@ -229,20 +229,35 @@
 
   // ── 각오 카드 (고정) ──────────────────────
   function resolve() {
-    $("resolve").innerHTML = "<h2>각오 · 1999~2026 QQQ 검증</h2>" +
+    $("resolve").innerHTML = "<h2><span>각오 · 1999~2026 QQQ 검증</span></h2>" +
       "<p><b>사냥 승률 74% · 평균 +1.9% · 최악 -40%</b><br>최대 평가손실: -57% (2004년 이후) / -96% (1999년 포함)</p>" +
       "<dl><dt>룰이 지는 구간</dt><dd>25% 넘는 급락이 없는 강세장<br>2010~2019년에 3배 단순보유 대비 연 9%p 뒤처졌다. 설계대로다.</dd>" +
       "<dt>사냥이 지는 장</dt><dd>계단식으로 갈아내리는 하락장<br>닷컴에서 사냥 기여는 -2.1%였다. 헛걸음이 이어지는 게 정상이다.</dd></dl>";
   }
 
+  // ── ⓘ (눌러야 보임) ───────────────────────
+  function info(v) {
+    var p = !proxyUrl ? "프록시 주소 미설정"
+          : lastOk && lastTry === lastOk ? "연결됨 · " + when(lastOk) + " 받음"
+          : "끊김 · 마지막 시도 " + when(lastTry);
+    $("infoBody").innerHTML =
+      "<p><b>판정</b> 장중 상태는 참고용. 주문은 마감 직전 종가로 판단한다. 장중에 선을 넘었다가 종가에 되돌아오는 경우가 있다.</p>" +
+      "<p><b>룰</b> 50·200일선 하나라도 위(초과) = 낮(TQQQ 100%), 둘 다 같거나 아래 = 밤(현금). 밤의 비중은 RSI2: 5 미만 100%, 5~15 50%, 15~50 직전 유지(사냥 중), 50 초과 전량 매도. 사냥 중 선 회복 = 청산 없이 낮. RSI2 = Wilder 기간 2.</p>" +
+      "<p><b>가격</b> 이동평균·RSI2·$ 는 전부 배당조정(수정주가) 종가 기준이라 증권사 차트의 $ 와 다를 수 있다. 판단은 현재가 대비 % 로. TQQQ 예상 = 전일 종가 × (1 + 3 × QQQ 변화율). '닿는' = 그 가격 이하로 마감하면 선 이하.</p>" +
+      "<p><b>휴일 갭</b> 선물과 현물은 베이시스 차이가 있어 예상치는 어긋날 수 있다. 참고용. 예상 시가 = 전일 종가 × (NQ 선물 ÷ 전일 현물 마감 시각 NQ " + num(state.nq_prev_settle, 2) + "). 예상 상태 = 예상 시가로 마감한다면.</p>" +
+      "<p><b>데이터</b> 기준: yfinance 일봉, GitHub Actions 가 매일 07:00 KST 에 기록 (마지막 " + v.asOf + " 종가, " + when(v.generatedAt) + " 기록). " +
+      "실시간: 야후 시세 → Cloudflare 프록시, 30초마다 (NQ 선물은 약 10분 지연) · " + p + ".</p>" +
+      (fakeNow != null ? "<p><b>시험 시계</b> " + T.fmtKst(now()) + "</p>" : "");
+  }
+
   function render() {
     if (!state) {
-      $("banner").innerHTML = stateErr ? "기준 데이터(state.json)를 불러오지 못했습니다: " + stateErr : "불러오는 중…";
+      if (stateErr) $("bannerBody").innerHTML = '<div class="off-msg">state.json 을 불러오지 못했습니다 · ' + stateErr + "</div>";
       return;
     }
     var v = T.buildView(state, quotes, now());
-    banner(v); alerts(v); card(v); tqqqCard(v); fx(v); foot(v);
-    regime(); hist(); resolve();
+    banner(v); todo(v); alerts(v); card(v); tqqqCard(v); fx(v);
+    regime(); hist(); resolve(); info(v);
     window.__view = v;
   }
 
