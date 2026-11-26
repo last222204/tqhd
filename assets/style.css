@@ -76,7 +76,9 @@ details summary::-webkit-details-marker { display: none; }
 /* ── 상태 배너 ───────────────────── */
 .banner { display: flex; gap: 10px; border-radius: 14px; padding: 11px 13px 10px; background: var(--t-off); border: 1px solid var(--t-off-line); }
 .bb { flex: 1 1 auto; min-width: 0; }
-.mascot { flex: 0 0 64px; width: 64px; height: 64px; border-radius: 10px; object-fit: cover; }
+.mascot { flex: 0 0 64px; align-self: flex-start; }
+.mascot[hidden] { display: none; }
+.mascot img { width: 64px; height: 64px; border-radius: 14px; display: block; }
 .banner.s-day { background: var(--t-day); border-color: var(--t-day-line); }
 .banner.s-night { background: var(--t-night); border-color: var(--t-night-line); }
 .banner.s-hunt { background: var(--t-hunt); border-color: var(--t-hunt-line); }

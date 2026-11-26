@@ -89,11 +89,40 @@ RSI(세로 눈금), 시계(갱신 시각). 그 이상은 만들지 않는다.
 
 **표의 각 줄, 숫자 옆, 설명문에는 아이콘을 넣지 않는다.** 넣으면 산만해진다.
 
-### 마스코트 자리
+### 마스코트 (에셋 있음 — 바로 넣을 것)
 
-상태 배너 오른쪽에 **64×64 정사각 이미지 슬롯**을 비워둔다
-(`<img class="mascot" alt="" hidden>`). 상태별 파일명 규칙만 정해두고 지금은 비활성:
-`assets/mascot-day.png`, `-night.png`, `-hunt.png`. 파일이 없으면 `hidden` 유지.
+`tqhd-mascot-assets.zip` 의 `assets/` 를 레포 루트에 그대로 넣는다.
+상태 배너 오른쪽에 **64×64** 로 표시하고, 상태가 바뀌면 이미지를 교체한다.
+
+| 상태 | 파일 |
+|---|---|
+| ☀️ 낮 | `assets/mascot-day` |
+| 🌙 밤 | `assets/mascot-night` |
+| 🏹 사냥 | `assets/mascot-hunt` |
+
+```html
+<picture class="mascot">
+  <source srcset="assets/mascot-night.webp" type="image/webp">
+  <img src="assets/mascot-night.png" alt="" width="64" height="64" decoding="async">
+</picture>
+```
+
+```css
+.mascot img { width:64px; height:64px; border-radius:14px; display:block; }
+```
+
+- **교체는 `srcset`/`src` 를 바꾸는 것으로 한다.** 세 장을 다 깔아놓고 `display:none` 으로
+  숨기지 말 것 — 쓸데없이 세 배를 받는다.
+- 이미지가 없거나 로드 실패하면 **슬롯을 통째로 숨긴다**(`onerror` → `hidden`).
+  깨진 아이콘이 뜨면 안 된다.
+- `alt` 는 빈 문자열. 상태는 옆의 글자가 이미 말하고 있어서 읽어주면 중복이다.
+- 마스코트는 **상태 배너에만** 쓴다. 다른 카드에는 넣지 않는다.
+- `mascot-hunt` 는 밤 캐릭터 확대본이다. 사냥 전용 포즈가 생기면 파일만 바꾸면 된다.
+
+### PWA 아이콘
+
+`assets/icon-512.png`, `assets/icon-192.png`, `assets/apple-touch-icon.png` 사용.
+4절 ③ 의 manifest 에 연결한다.
 
 ---
 

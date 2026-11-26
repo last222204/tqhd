@@ -40,19 +40,21 @@
   function md(iso) { return iso.slice(5).replace("-", "/"); }
   function isEarly(s) { return s && Date.parse(s.close_utc) - Date.parse(s.open_utc) < 6.5 * 3600e3 - 1; }
 
-  // ── 마스코트 (파일이 있을 때만) ───────────
-  var mascotOk = {};
+  // ── 마스코트 (상태 배너에만, 한 장만 받는다) ──
+  // 상태가 바뀔 때만 srcset/src 를 바꾼다. 못 불러오면 슬롯을 통째로 숨긴다.
+  var mascotState = null, mascotFailed = {};
+  (function () {
+    var img = $("mascotImg");
+    img.addEventListener("load", function () { if (mascotState) $("mascot").hidden = false; });
+    img.addEventListener("error", function () { if (mascotState) mascotFailed[mascotState] = true; $("mascot").hidden = true; });
+  })();
   function mascot(s) {
-    var img = $("mascot");
-    if (!s) { img.hidden = true; return; }
-    if (mascotOk[s] === undefined) {
-      mascotOk[s] = null;
-      var probe = new Image();
-      probe.onload = function () { mascotOk[s] = true; render(); };
-      probe.onerror = function () { mascotOk[s] = false; };
-      probe.src = "assets/mascot-" + s + ".png";
-    }
-    if (mascotOk[s]) { img.src = "assets/mascot-" + s + ".png"; img.hidden = false; } else img.hidden = true;
+    var pic = $("mascot");
+    if (!s || mascotFailed[s]) { pic.hidden = true; mascotState = s; return; }
+    if (s === mascotState) return;
+    mascotState = s;
+    $("mascotWebp").srcset = "assets/mascot-" + s + ".webp";
+    $("mascotImg").src = "assets/mascot-" + s + ".png";
   }
 
   // ── 배너 ──────────────────────────────────
@@ -111,7 +113,7 @@
     }
     el.className = "banner" + (st ? " s-" + st : "");
     $("bannerBody").innerHTML = h;
-    mascot(st);
+    mascot(st || (v.confirmed && v.confirmed.state));     // 지금 상태가 없으면 어제 확정 상태
   }
 
   function todo(v) {

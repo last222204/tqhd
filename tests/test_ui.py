@@ -98,7 +98,9 @@ def test_single_font_with_fallback():
 
 
 def test_mascot_slot_hidden_and_no_loading_text():
-    assert '<img class="mascot" id="mascot" alt="" hidden>' in HTML
+    assert '<picture class="mascot" id="mascot" hidden>' in HTML and '<img id="mascotImg" alt="" width="64" height="64"' in HTML
+    js = (ROOT / "assets" / "app.js").read_text(encoding="utf-8")
+    assert 'addEventListener("error"' in js and "hidden = true" in js and "display: none" not in js
     assert "불러오는 중" not in HTML and "불러오는 중" not in (ROOT / "assets" / "app.js").read_text(encoding="utf-8")
     assert "판정은 종가 기준 · 장중은 참고" in HTML
 
