@@ -72,15 +72,16 @@
     var el = $("banner"), h = "", st = null;
     if (v.mode === "live" || v.mode === "closed") {
       var L = v.live, c = Date.parse(v.session.close_utc);
-      var timeLeft = L && L.closing ? "장 마감" : "마감 " + kstHM(c) + "까지 " + left(c - now()) + (isEarly(v.session) ? " · 조기 폐장" : "");
+      var timeLeft = L && L.closing ? "장 마감" : "마감 " + kstHM(c) + "까지 " + left(c - now());
+      var early = isEarly(v.session) ? badgeHtml({ emoji: "⏱️", text: "조기 폐장" }) : "";
       if (L && L.ok) {
         st = L.eval.state;
-        h += '<div class="lbl">' + (L.closing ? "오늘 종가" : "지금") + "</div>" + bigState(L.eval.state, L.eval.weight);
+        h += '<div class="lbl">' + (L.closing ? "오늘 종가" : "지금") + early + "</div>" + bigState(L.eval.state, L.eval.weight);
         h += confLine(v);
         if (L.differs) h += '<div class="diff">종가에 ' + U.word(v.confirmed.state, v.confirmed.weight) + " → " + U.word(L.eval.state, L.eval.weight) + "</div>";
         h += '<div class="meta">' + ICON.clock + N("QQQ " + usd(L.price) + " · " + when(L.t)) + " · " + N(timeLeft) + "</div>";
       } else {
-        h += badgeHtml(U.badge(v));
+        h += "<div>" + badgeHtml(U.badge(v)) + early + "</div>";
         h += '<div class="state"><span class="w off">실시간 판정 없음</span></div>';
         h += '<div class="off-msg">' + (L ? L.text : "실시간 연결 끊김, 전일 종가 기준만 유효") + "</div>";
         h += confLine(v);
@@ -138,6 +139,7 @@
     h += '<div class="prev">전일 ' + N(usd(c.prev) + " · " + md(v.asOf)) + "</div>";
 
     var basePrice = ref ? ref.price : c.prev;
+    h += gauges(c, basePrice, ref ? c.rsi2 : v.confirmed.rsi2);
     function chg(x, arrow) {
       if (!x) return '<div><div class="v">' + arrow + '</div><div class="none">안 바뀜</div></div>';
       var d = x.price / basePrice - 1;
@@ -160,6 +162,31 @@
     h += '<div class="rsi"><span class="n">' + ICON.rsi + "RSI2</span><span class=\"v num\">" + num(ref ? c.rsi2 : v.confirmed.rsi2, 1) +
          "<small>" + (ref ? (ref.kind === "open" ? "예상" : "지금") : "확정") + "</small></span></div>";
     el.innerHTML = h;
+  }
+
+  // ── 게이지 세 개 ──────────────────────────
+  var LINE_RANGE = 0.10;                                   // 선 ±10% 를 양 끝으로 (넘으면 끝에 붙음)
+  function lineGauge(label, cross, price) {
+    var d = price / cross - 1;                             // 현재가가 선보다 몇 % 위(+)/아래(−)
+    var x = Math.max(-1, Math.min(1, d / LINE_RANGE)) * 50;
+    var fill = d >= 0 ? 'left:50%;width:' + x + '%' : 'left:' + (50 + x) + '%;width:' + (-x) + '%';
+    return '<div class="g"><span class="gl">' + label + '</span><span class="gb"><i class="fill ' + (d >= 0 ? "up" : "down") +
+      '" style="' + fill + '"></i><i class="mid"></i></span><span class="gv num ' + cls(d) + '">' + pct(d) + "</span></div>";
+  }
+  function rsiGauge(r) {
+    var zones = [[0, 5], [5, 15], [15, 50], [50, 100]], h = '<span class="gb rsi">';
+    zones.forEach(function (z, i) {
+      var cur = r != null && (i === 3 ? r > 50 : r >= z[0] && (i === 2 ? r <= 50 : r < z[1]));
+      h += '<i class="z' + (cur ? " cur" : "") + (i === 0 ? " first" : "") + (i === 3 ? " last" : "") +
+           '" style="left:' + z[0] + "%;width:" + (z[1] - z[0]) + '%"></i>';
+    });
+    [5, 15, 50].forEach(function (t) { h += '<i class="tick" style="left:' + t + '%"></i>'; });
+    if (r != null) h += '<i class="dot" style="left:' + Math.max(0, Math.min(100, r)) + '%"></i>';
+    return '<div class="g"><span class="gl">RSI2</span>' + h + '</span><span class="gv num">' + num(r, 1) + "</span></div>";
+  }
+  function gauges(c, price, rsi) {
+    var r50 = c.rows[0], r200 = c.rows[1];
+    return '<div class="gauges">' + lineGauge("50일선", r50.price, price) + lineGauge("200일선", r200.price, price) + rsiGauge(rsi) + "</div>";
   }
 
   function tqqqCard(v) {

@@ -108,3 +108,17 @@ def test_mascot_slot_hidden_and_no_loading_text():
 def test_no_service_worker():
     js = (ROOT / "assets" / "app.js").read_text(encoding="utf-8")
     assert "serviceWorker" not in js and "serviceWorker" not in HTML
+
+
+def test_gap_number_and_change_stay_on_one_line():
+    css = (ROOT / "assets" / "style.css").read_text(encoding="utf-8")
+    rule = re.search(r"\.grid \.v \{[^}]*\}", css).group(0)
+    assert "white-space: nowrap" in rule
+    assert ".bb > .grid" in css and "grid-column: 1 / -1" in css          # 휴장 칸은 마스코트 아래 전체 폭
+
+
+def test_gauges_are_plain_divs_6px():
+    css = (ROOT / "assets" / "style.css").read_text(encoding="utf-8")
+    assert re.search(r"\.gb \{[^}]*height: 6px", css) and "border-radius: 3px" in css
+    js = (ROOT / "assets" / "app.js").read_text(encoding="utf-8")
+    assert "[5, 15, 50].forEach" in js and "조기 폐장" in js
