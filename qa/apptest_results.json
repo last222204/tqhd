@@ -1,0 +1,287 @@
+[
+ {
+  "name": "오늘",
+  "sec": 1.6,
+  "error": null,
+  "warnings": [],
+  "warnings_ui": [],
+  "errors_ui": [],
+  "info_ui": []
+ },
+ {
+  "name": "차트",
+  "sec": 0.6,
+  "error": null,
+  "warnings": [],
+  "warnings_ui": [],
+  "errors_ui": [],
+  "info_ui": []
+ },
+ {
+  "name": "연간 점검",
+  "sec": 0.3,
+  "error": null,
+  "warnings": [],
+  "warnings_ui": [],
+  "errors_ui": [],
+  "info_ui": []
+ },
+ {
+  "name": "시뮬레이터 기본",
+  "sec": 1.4,
+  "error": null,
+  "warnings": [],
+  "warnings_ui": [],
+  "errors_ui": [],
+  "info_ui": [
+   "시작 후 5년이 데이터보다 뒤라서 계산할 청산일이 없습니다. 시작일을 앞당기거나 N을 줄이세요."
+  ]
+ },
+ {
+  "name": "시뮬레이터 프리셋 0",
+  "sec": 1.0,
+  "error": null,
+  "warnings": [],
+  "warnings_ui": [
+   "**이 기간은 가상 데이터 포함, 실제보다 연 1~1.5%p 후할 수 있음.** (☂️ 나스닥 우산, QLD 그냥 적립, TQQQ 그냥 적립: 상장 전 구간을 QQQ×배수 − 단기금리 − 연 0.95%로 만듦)",
+   "내 시작일은 실제 상품 구간(2010-03~)보다 앞이라 이 분포와 조건이 다릅니다. 위의 '가상 데이터 구간도 포함'을 켜고 비교하세요."
+  ],
+  "errors_ui": [],
+  "info_ui": []
+ },
+ {
+  "name": "시뮬레이터 프리셋 1",
+  "sec": 1.7,
+  "error": null,
+  "warnings": [],
+  "warnings_ui": [
+   "**이 기간은 가상 데이터 포함, 실제보다 연 1~1.5%p 후할 수 있음.** (☂️ 나스닥 우산, TQQQ 그냥 적립: 상장 전 구간을 QQQ×배수 − 단기금리 − 연 0.95%로 만듦)",
+   "내 시작일은 실제 상품 구간(2010-03~)보다 앞이라 이 분포와 조건이 다릅니다. 위의 '가상 데이터 구간도 포함'을 켜고 비교하세요."
+  ],
+  "errors_ui": [],
+  "info_ui": []
+ },
+ {
+  "name": "시뮬레이터 프리셋 2",
+  "sec": 1.5,
+  "error": null,
+  "warnings": [],
+  "warnings_ui": [
+   "**이 기간은 가상 데이터 포함, 실제보다 연 1~1.5%p 후할 수 있음.** (☂️ 나스닥 우산, TQQQ 그냥 적립: 상장 전 구간을 QQQ×배수 − 단기금리 − 연 0.95%로 만듦)",
+   "내 시작일은 실제 상품 구간(2010-03~)보다 앞이라 이 분포와 조건이 다릅니다. 위의 '가상 데이터 구간도 포함'을 켜고 비교하세요."
+  ],
+  "errors_ui": [],
+  "info_ui": []
+ },
+ {
+  "name": "시뮬레이터 프리셋 3",
+  "sec": 1.0,
+  "error": null,
+  "warnings": [],
+  "warnings_ui": [],
+  "errors_ui": [],
+  "info_ui": []
+ },
+ {
+  "name": "시뮬레이터 프리셋 4",
+  "sec": 0.9,
+  "error": null,
+  "warnings": [],
+  "warnings_ui": [],
+  "errors_ui": [],
+  "info_ui": [
+   "종료일이 데이터보다 뒤라서 2026-11-13(마지막 데이터)까지 계산했습니다.",
+   "시작 후 5년이 데이터보다 뒤라서 계산할 청산일이 없습니다. 시작일을 앞당기거나 N을 줄이세요."
+  ]
+ },
+ {
+  "name": "시뮬레이터 프리셋 5",
+  "sec": 0.9,
+  "error": null,
+  "warnings": [],
+  "warnings_ui": [],
+  "errors_ui": [],
+  "info_ui": [
+   "시작 후 5년이 데이터보다 뒤라서 계산할 청산일이 없습니다. 시작일을 앞당기거나 N을 줄이세요."
+  ]
+ },
+ {
+  "name": "시뮬레이터 프리셋 6",
+  "sec": 1.2,
+  "error": null,
+  "warnings": [],
+  "warnings_ui": [
+   "**이 기간은 가상 데이터 포함, 실제보다 연 1~1.5%p 후할 수 있음.** (☂️ 나스닥 우산, QLD 그냥 적립, TQQQ 그냥 적립: 상장 전 구간을 QQQ×배수 − 단기금리 − 연 0.95%로 만듦)",
+   "내 시작일은 실제 상품 구간(2010-03~)보다 앞이라 이 분포와 조건이 다릅니다. 위의 '가상 데이터 구간도 포함'을 켜고 비교하세요."
+  ],
+  "errors_ui": [],
+  "info_ui": []
+ },
+ {
+  "name": "시뮬레이터 모든 시기 평균",
+  "sec": 1.8,
+  "error": null,
+  "warnings": [],
+  "warnings_ui": [],
+  "errors_ui": [],
+  "info_ui": []
+ },
+ {
+  "name": "시뮬레이터 규칙 종료일 직접",
+  "sec": 1.1,
+  "error": null,
+  "warnings": [],
+  "warnings_ui": [],
+  "errors_ui": [],
+  "info_ui": [
+   "시작 후 5년이 데이터보다 뒤라서 계산할 청산일이 없습니다. 시작일을 앞당기거나 N을 줄이세요."
+  ]
+ },
+ {
+  "name": "시뮬레이터 규칙 졸업 A: 전고점 졸업",
+  "sec": 1.9,
+  "error": null,
+  "warnings": [],
+  "warnings_ui": [],
+  "errors_ui": [],
+  "info_ui": [
+   "시작 후 5년이 데이터보다 뒤라서 계산할 청산일이 없습니다. 시작일을 앞당기거나 N을 줄이세요."
+  ]
+ },
+ {
+  "name": "시뮬레이터 규칙 졸업 B: 목표 배수 졸업",
+  "sec": 2.1,
+  "error": null,
+  "warnings": [],
+  "warnings_ui": [],
+  "errors_ui": [],
+  "info_ui": [
+   "시작 후 5년이 데이터보다 뒤라서 계산할 청산일이 없습니다. 시작일을 앞당기거나 N을 줄이세요."
+  ]
+ },
+ {
+  "name": "시뮬레이터 규칙 하락장 강제 청산",
+  "sec": 2.1,
+  "error": null,
+  "warnings": [],
+  "warnings_ui": [],
+  "errors_ui": [],
+  "info_ui": [
+   "시작 후 5년이 데이터보다 뒤라서 계산할 청산일이 없습니다. 시작일을 앞당기거나 N을 줄이세요."
+  ]
+ },
+ {
+  "name": "시뮬레이터 규칙 무작위 청산",
+  "sec": 1.9,
+  "error": null,
+  "warnings": [],
+  "warnings_ui": [],
+  "errors_ui": [],
+  "info_ui": [
+   "시작 후 5년이 데이터보다 뒤라서 계산할 청산일이 없습니다. 시작일을 앞당기거나 N을 줄이세요."
+  ]
+ },
+ {
+  "name": "시뮬레이터 검산 모드",
+  "sec": 1.1,
+  "error": null,
+  "warnings": [],
+  "warnings_ui": [],
+  "errors_ui": [],
+  "info_ui": [
+   "검산 모드: 코랩 백테스트 가정으로 계산 중입니다 (환율 고정 등).",
+   "환율 효과는 '원화 (그날 환율로 환전)' 기준이고 검산 모드가 아닐 때만 계산합니다.",
+   "시작 후 5년이 데이터보다 뒤라서 계산할 청산일이 없습니다. 시작일을 앞당기거나 N을 줄이세요."
+  ]
+ },
+ {
+  "name": "시뮬레이터 달러 기준 + 보유 유지",
+  "sec": 1.0,
+  "error": null,
+  "warnings": [],
+  "warnings_ui": [],
+  "errors_ui": [],
+  "info_ui": [
+   "환율 효과는 '원화 (그날 환율로 환전)' 기준이고 검산 모드가 아닐 때만 계산합니다.",
+   "시작 후 5년이 데이터보다 뒤라서 계산할 청산일이 없습니다. 시작일을 앞당기거나 N을 줄이세요."
+  ]
+ },
+ {
+  "name": "시뮬레이터 처음 0원",
+  "sec": 1.0,
+  "error": null,
+  "warnings": [],
+  "warnings_ui": [],
+  "errors_ui": [],
+  "info_ui": [
+   "시작 후 5년이 데이터보다 뒤라서 계산할 청산일이 없습니다. 시작일을 앞당기거나 N을 줄이세요."
+  ]
+ },
+ {
+  "name": "시뮬레이터 적립 0원",
+  "sec": 1.0,
+  "error": null,
+  "warnings": [],
+  "warnings_ui": [],
+  "errors_ui": [],
+  "info_ui": [
+   "시작 후 5년이 데이터보다 뒤라서 계산할 청산일이 없습니다. 시작일을 앞당기거나 N을 줄이세요."
+  ]
+ },
+ {
+  "name": "시뮬레이터 비교 대상 없음",
+  "sec": 0.8,
+  "error": null,
+  "warnings": [],
+  "warnings_ui": [],
+  "errors_ui": [],
+  "info_ui": [
+   "시작 후 5년이 데이터보다 뒤라서 계산할 청산일이 없습니다. 시작일을 앞당기거나 N을 줄이세요."
+  ]
+ },
+ {
+  "name": "청산 시나리오 기본(2000)",
+  "sec": 11.1,
+  "error": null,
+  "warnings": [],
+  "warnings_ui": [],
+  "errors_ui": [],
+  "info_ui": []
+ },
+ {
+  "name": "청산 시나리오 주사위 🎲 아무거나 한 번",
+  "sec": 2.1,
+  "error": null,
+  "warnings": [],
+  "warnings_ui": [],
+  "errors_ui": [],
+  "info_ui": []
+ },
+ {
+  "name": "청산 시나리오 주사위 🔴 하락장 청산만 뽑기",
+  "sec": 2.3,
+  "error": null,
+  "warnings": [],
+  "warnings_ui": [],
+  "errors_ui": [],
+  "info_ui": []
+ },
+ {
+  "name": "청산 시나리오 주사위 🟢 상승장 청산만 뽑기",
+  "sec": 1.9,
+  "error": null,
+  "warnings": [],
+  "warnings_ui": [],
+  "errors_ui": [],
+  "info_ui": []
+ },
+ {
+  "name": "청산 시나리오 보유 15~20년",
+  "sec": 8.9,
+  "error": null,
+  "warnings": [],
+  "warnings_ui": [],
+  "errors_ui": [],
+  "info_ui": []
+ }
+]

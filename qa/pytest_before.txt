@@ -1,0 +1,5 @@
+........................................................................ [ 75%]
+........................                                                 [100%]
+96 passed in 30.06s
+C:\Users\2last\AppData\Local\Python\pythoncore-3.14-64\Lib\tempfile.py:961: ResourceWarning: Implicitly cleaning up <TemporaryDirectory 'C:\\Users\\2last\\AppData\\Local\\Temp\\tmpbi08hl8r'>
+  _warnings.warn(warn_message, ResourceWarning)
