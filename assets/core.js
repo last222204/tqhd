@@ -30,16 +30,17 @@ var TQHD = (function () {
   // ── 이동평균 · 판정 ───────────────────────────
   function liveSma(sumPrev, n, price) { return (sumPrev + price) / n; }
 
-  function isNight(price, smaFast, smaSlow) { return price < smaFast && price < smaSlow; }
+  /* 두 선 다 같거나 아래(<=)면 밤. 하나라도 위(>)면 낮. */
+  function isNight(price, smaFast, smaSlow) { return price <= smaFast && price <= smaSlow; }
 
   function nextState(prevState, prevWeight, night, rsi) {
-    if (!night) return { state: DAY, weight: 100 };
+    if (!night) return { state: DAY, weight: 100 };               // 사냥 중 선 회복도 청산 없이 낮
+    if (rsi < HUNT_FULL) return { state: HUNT, weight: 100 };
+    if (rsi < HUNT_HALF) return { state: HUNT, weight: 50 };      // 100% 에서 5~15 로 올라오면 50%
     if (prevState === HUNT) {
       if (rsi > HUNT_EXIT) return { state: NIGHT, weight: 0 };
-      return { state: HUNT, weight: rsi < HUNT_FULL ? 100 : prevWeight };
+      return { state: HUNT, weight: prevWeight };                 // 15~50: 직전 비중 유지
     }
-    if (rsi < HUNT_FULL) return { state: HUNT, weight: 100 };
-    if (rsi < HUNT_HALF) return { state: HUNT, weight: 50 };
     return { state: NIGHT, weight: 0 };
   }
 

@@ -1,31 +1,31 @@
 {
  "version": 1,
- "generated_at": "2026-11-26T14:27:59Z",
+ "generated_at": "2026-11-26T14:48:44Z",
  "as_of": "2026-11-25",
  "as_of_close_utc": "2026-11-25T21:00:00Z",
  "price_basis": "배당조정 종가 (yfinance auto_adjust)",
  "qqq_prev_close": 633.9299926757812,
  "sum_prev_49": 34634.809143066406,
- "sum_prev_199": 135897.75720214844,
+ "sum_prev_199": 135897.7569580078,
  "wilder_avg_gain": 5.37365860554388,
  "wilder_avg_loss": 8.18584017038339,
  "prev_state": "night",
  "prev_weight": 0,
  "tqqq_prev_close": 45.279998779296875,
- "nq_prev_settle": 26105.75,
+ "nq_prev_settle": 26105.5,
  "nq_prev_settle_time": "2026-11-25T21:00:00Z",
  "nq_prev_settle_source": "5분봉",
  "confirmed": {
   "date": "2026-11-25",
   "close": 633.929993,
   "sma50": 707.019657,
-  "sma200": 682.543931,
+  "sma200": 682.54393,
   "rsi2": 39.630216,
   "state": "night",
   "weight": 0
  },
  "usdkrw": {
-  "price": 1343.33,
+  "price": 1343.36,
   "date": "2026-11-26"
  },
  "night_ratio": {
@@ -39,420 +39,480 @@
    "close": 708.5017,
    "rsi2": 31.42,
    "state": "day",
-   "weight": 100
+   "weight": 100,
+   "source": "역산"
   },
   {
    "date": "2026-09-03",
    "close": 716.9229,
    "rsi2": 78.67,
    "state": "day",
-   "weight": 100
+   "weight": 100,
+   "source": "역산"
   },
   {
    "date": "2026-09-04",
    "close": 718.2116,
    "rsi2": 82.39,
    "state": "day",
-   "weight": 100
+   "weight": 100,
+   "source": "역산"
   },
   {
    "date": "2026-09-08",
    "close": 717.6122,
    "rsi2": 70.9,
    "state": "day",
-   "weight": 100
+   "weight": 100,
+   "source": "역산"
   },
   {
    "date": "2026-09-09",
    "close": 715.5644,
    "rsi2": 36.31,
    "state": "day",
-   "weight": 100
+   "weight": 100,
+   "source": "역산"
   },
   {
    "date": "2026-09-10",
    "close": 707.9523,
    "rsi2": 7.85,
    "state": "day",
-   "weight": 100
+   "weight": 100,
+   "source": "역산"
   },
   {
    "date": "2026-09-11",
    "close": 714.1359,
    "rsi2": 59.47,
    "state": "day",
-   "weight": 100
+   "weight": 100,
+   "source": "역산"
   },
   {
    "date": "2026-09-14",
    "close": 708.4418,
    "rsi2": 29.27,
    "state": "day",
-   "weight": 100
+   "weight": 100,
+   "source": "역산"
   },
   {
    "date": "2026-09-15",
    "close": 703.8066,
    "rsi2": 16.02,
    "state": "day",
-   "weight": 100
+   "weight": 100,
+   "source": "역산"
   },
   {
    "date": "2026-09-16",
    "close": 703.9864,
    "rsi2": 18.87,
    "state": "day",
-   "weight": 100
+   "weight": 100,
+   "source": "역산"
   },
   {
    "date": "2026-09-17",
    "close": 716.1737,
    "rsi2": 85.51,
    "state": "day",
-   "weight": 100
+   "weight": 100,
+   "source": "역산"
   },
   {
    "date": "2026-09-18",
    "close": 720.699,
    "rsi2": 91.0,
    "state": "day",
-   "weight": 100
+   "weight": 100,
+   "source": "역산"
   },
   {
    "date": "2026-09-21",
    "close": 741.47,
    "rsi2": 97.99,
    "state": "day",
-   "weight": 100
+   "weight": 100,
+   "source": "역산"
   },
   {
    "date": "2026-09-22",
    "close": 747.46,
    "rsi2": 98.61,
    "state": "day",
-   "weight": 100
+   "weight": 100,
+   "source": "역산"
   },
   {
    "date": "2026-09-23",
    "close": 741.21,
    "rsi2": 59.92,
    "state": "day",
-   "weight": 100
+   "weight": 100,
+   "source": "역산"
   },
   {
    "date": "2026-09-24",
    "close": 741.1,
    "rsi2": 59.11,
    "state": "day",
-   "weight": 100
+   "weight": 100,
+   "source": "역산"
   },
   {
    "date": "2026-09-25",
    "close": 744.5,
    "rsi2": 77.8,
    "state": "day",
-   "weight": 100
+   "weight": 100,
+   "source": "역산"
   },
   {
    "date": "2026-09-28",
    "close": 736.53,
    "rsi2": 24.75,
    "state": "day",
-   "weight": 100
+   "weight": 100,
+   "source": "역산"
   },
   {
    "date": "2026-09-29",
    "close": 737.93,
    "rsi2": 39.29,
    "state": "day",
-   "weight": 100
+   "weight": 100,
+   "source": "역산"
   },
   {
    "date": "2026-09-30",
    "close": 739.77,
    "rsi2": 59.74,
    "state": "day",
-   "weight": 100
+   "weight": 100,
+   "source": "역산"
   },
   {
    "date": "2026-10-01",
    "close": 742.03,
    "rsi2": 77.97,
    "state": "day",
-   "weight": 100
+   "weight": 100,
+   "source": "역산"
   },
   {
    "date": "2026-10-02",
    "close": 749.58,
    "rsi2": 94.53,
    "state": "day",
-   "weight": 100
+   "weight": 100,
+   "source": "역산"
   },
   {
    "date": "2026-10-05",
    "close": 756.2,
    "rsi2": 97.64,
    "state": "day",
-   "weight": 100
+   "weight": 100,
+   "source": "역산"
   },
   {
    "date": "2026-10-06",
    "close": 759.66,
    "rsi2": 98.52,
    "state": "day",
-   "weight": 100
+   "weight": 100,
+   "source": "역산"
   },
   {
    "date": "2026-10-07",
    "close": 757.73,
    "rsi2": 69.58,
    "state": "day",
-   "weight": 100
+   "weight": 100,
+   "source": "역산"
   },
   {
    "date": "2026-10-08",
    "close": 747.58,
    "rsi2": 17.01,
    "state": "day",
-   "weight": 100
+   "weight": 100,
+   "source": "역산"
   },
   {
    "date": "2026-10-09",
    "close": 751.27,
    "rsi2": 46.44,
    "state": "day",
-   "weight": 100
+   "weight": 100,
+   "source": "역산"
   },
   {
    "date": "2026-10-12",
    "close": 746.04,
    "rsi2": 23.16,
    "state": "day",
-   "weight": 100
+   "weight": 100,
+   "source": "역산"
   },
   {
    "date": "2026-10-13",
    "close": 743.57,
    "rsi2": 15.72,
    "state": "day",
-   "weight": 100
+   "weight": 100,
+   "source": "역산"
   },
   {
    "date": "2026-10-14",
    "close": 728.95,
    "rsi2": 3.27,
    "state": "day",
-   "weight": 100
+   "weight": 100,
+   "source": "역산"
   },
   {
    "date": "2026-10-15",
    "close": 728.0,
    "rsi2": 2.97,
    "state": "day",
-   "weight": 100
+   "weight": 100,
+   "source": "역산"
   },
   {
    "date": "2026-10-16",
    "close": 709.8,
    "rsi2": 0.65,
    "state": "day",
-   "weight": 100
+   "weight": 100,
+   "source": "역산"
   },
   {
    "date": "2026-10-19",
    "close": 718.36,
    "rsi2": 42.74,
    "state": "day",
-   "weight": 100
+   "weight": 100,
+   "source": "역산"
   },
   {
    "date": "2026-10-20",
    "close": 717.63,
    "rsi2": 39.86,
    "state": "day",
-   "weight": 100
+   "weight": 100,
+   "source": "역산"
   },
   {
    "date": "2026-10-21",
    "close": 725.2,
    "rsi2": 74.92,
    "state": "day",
-   "weight": 100
+   "weight": 100,
+   "source": "역산"
   },
   {
    "date": "2026-10-22",
    "close": 704.47,
    "rsi2": 17.87,
    "state": "day",
-   "weight": 100
+   "weight": 100,
+   "source": "역산"
   },
   {
    "date": "2026-10-23",
    "close": 704.4,
    "rsi2": 17.78,
    "state": "day",
-   "weight": 100
+   "weight": 100,
+   "source": "역산"
   },
   {
    "date": "2026-10-26",
    "close": 712.2,
    "rsi2": 61.58,
    "state": "day",
-   "weight": 100
+   "weight": 100,
+   "source": "역산"
   },
   {
    "date": "2026-10-27",
    "close": 721.25,
    "rsi2": 82.82,
    "state": "day",
-   "weight": 100
+   "weight": 100,
+   "source": "역산"
   },
   {
    "date": "2026-10-28",
    "close": 725.61,
    "rsi2": 88.79,
    "state": "day",
-   "weight": 100
+   "weight": 100,
+   "source": "역산"
   },
   {
    "date": "2026-10-29",
    "close": 715.34,
    "rsi2": 33.67,
    "state": "day",
-   "weight": 100
+   "weight": 100,
+   "source": "역산"
   },
   {
    "date": "2026-10-30",
    "close": 690.49,
    "rsi2": 8.41,
    "state": "day",
-   "weight": 100
+   "weight": 100,
+   "source": "역산"
   },
   {
    "date": "2026-11-02",
    "close": 681.09,
    "rsi2": 5.36,
    "state": "day",
-   "weight": 100
+   "weight": 100,
+   "source": "역산"
   },
   {
    "date": "2026-11-03",
    "close": 685.28,
    "rsi2": 28.46,
    "state": "day",
-   "weight": 100
+   "weight": 100,
+   "source": "역산"
   },
   {
    "date": "2026-11-04",
    "close": 691.95,
    "rsi2": 59.74,
    "state": "day",
-   "weight": 100
+   "weight": 100,
+   "source": "역산"
   },
   {
    "date": "2026-11-05",
    "close": 647.05,
    "rsi2": 8.67,
    "state": "hunt",
-   "weight": 50
+   "weight": 50,
+   "source": "역산"
   },
   {
    "date": "2026-11-06",
    "close": 656.1,
    "rsi2": 32.08,
    "state": "hunt",
-   "weight": 50
+   "weight": 50,
+   "source": "역산"
   },
   {
    "date": "2026-11-09",
    "close": 679.35,
    "rsi2": 70.68,
    "state": "night",
-   "weight": 0
+   "weight": 0,
+   "source": "역산"
   },
   {
    "date": "2026-11-10",
    "close": 674.76,
    "rsi2": 57.73,
    "state": "night",
-   "weight": 0
+   "weight": 0,
+   "source": "역산"
   },
   {
    "date": "2026-11-11",
    "close": 690.38,
    "rsi2": 81.19,
    "state": "day",
-   "weight": 100
+   "weight": 100,
+   "source": "역산"
   },
   {
    "date": "2026-11-12",
    "close": 688.17,
    "rsi2": 70.17,
    "state": "day",
-   "weight": 100
+   "weight": 100,
+   "source": "역산"
   },
   {
    "date": "2026-11-13",
    "close": 679.89,
    "rsi2": 34.79,
    "state": "night",
-   "weight": 0
+   "weight": 0,
+   "source": "역산"
   },
   {
    "date": "2026-11-16",
    "close": 661.75,
    "rsi2": 10.84,
    "state": "hunt",
-   "weight": 50
+   "weight": 50,
+   "source": "역산"
   },
   {
    "date": "2026-11-17",
    "close": 656.95,
    "rsi2": 7.94,
    "state": "hunt",
-   "weight": 50
+   "weight": 50,
+   "source": "역산"
   },
   {
    "date": "2026-11-18",
    "close": 659.51,
    "rsi2": 28.35,
    "state": "hunt",
-   "weight": 50
+   "weight": 50,
+   "source": "역산"
   },
   {
    "date": "2026-11-19",
    "close": 645.04,
    "rsi2": 8.09,
    "state": "hunt",
-   "weight": 50
+   "weight": 50,
+   "source": "역산"
   },
   {
    "date": "2026-11-20",
    "close": 608.45,
    "rsi2": 1.75,
    "state": "hunt",
-   "weight": 100
+   "weight": 100,
+   "source": "역산"
   },
   {
    "date": "2026-11-23",
    "close": 651.03,
    "rsi2": 65.2,
    "state": "night",
-   "weight": 0
+   "weight": 0,
+   "source": "역산"
   },
   {
    "date": "2026-11-24",
    "close": 638.1,
    "rsi2": 46.83,
    "state": "night",
-   "weight": 0
+   "weight": 0,
+   "source": "역산"
   },
   {
    "date": "2026-11-25",
    "close": 633.93,
    "rsi2": 39.63,
    "state": "night",
-   "weight": 0
+   "weight": 0,
+   "source": "역산"
   }
  ],
  "calendar": {

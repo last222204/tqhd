@@ -121,5 +121,44 @@ body {
 
 .tq .px .p { font-size: 20px; }
 
+/* 현재가 대비 머리줄 */
+.rh { display: flex; justify-content: space-between; font-size: 11px; color: var(--muted); margin-top: 6px; padding-bottom: 2px; border-bottom: 1px solid var(--line); }
+.basis b { color: var(--muted); font-weight: 600; }
+
+/* 밤 비율 */
+.card h2 small { font-weight: 500; color: var(--dim); }
+.ratio { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; margin-top: 6px; }
+.ratio > div { background: #1f232c; border-radius: 9px; padding: 5px 8px; text-align: center; }
+.ratio .k { font-size: 11px; color: var(--muted); }
+.ratio .v { font-size: 18px; font-weight: 800; }
+.ratio .hi .v, .legend .hi { color: var(--night); }
+.ratio .lo .v, .legend .lo { color: var(--day); }
+.legend { margin-top: 6px; font-size: 12px; color: var(--muted); line-height: 1.5; }
+.legend span { font-weight: 700; }
+
+/* 60일 띠 */
+.strip { display: flex; gap: 1px; margin-top: 8px; height: 30px; touch-action: none; cursor: pointer; }
+.strip .b { flex: 1 1 0; border-radius: 2px; }
+.b { display: inline-block; }
+.b-day { background: #c9a43a; }
+.b-night { background: #3b4392; }
+.b-hunt { background: #c25a2c; }
+.b-hunt.full { background: #ff7a45; }
+.strip .sel { outline: 2px solid #fff; outline-offset: 1px; position: relative; z-index: 1; }
+.ends { display: flex; justify-content: space-between; font-size: 11px; color: var(--dim); margin-top: 3px; }
+.pick { margin-top: 4px; font-size: 13px; }
+.pick .src { font-size: 11px; color: var(--dim); border: 1px solid var(--line); border-radius: 6px; padding: 0 4px; }
+.keys { margin-top: 6px; font-size: 11px; color: var(--muted); }
+.keys .b { width: 10px; height: 10px; border-radius: 2px; vertical-align: -1px; margin: 0 2px 0 8px; }
+.keys .b:first-child { margin-left: 0; }
+
+/* 각오 카드 */
+.resolve { background: #14161b; border-color: #22252c; }
+.resolve h2 { color: var(--dim); }
+.resolve p { margin: 6px 0 4px; font-size: 13px; color: #c9ccd2; line-height: 1.5; }
+.resolve dl { margin: 6px 0 0; font-size: 12px; color: var(--muted); }
+.resolve dt { font-weight: 700; color: #b9bcc3; margin-top: 6px; }
+.resolve dd { margin: 1px 0 0; line-height: 1.45; }
+
 .foot { margin-top: 18px; font-size: 11px; color: var(--dim); line-height: 1.6; }
 .foot b { color: var(--muted); font-weight: 600; }

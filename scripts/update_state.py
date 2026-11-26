@@ -250,6 +250,14 @@ def append_history(path: Path, frame: pd.DataFrame, now: datetime, backfill: int
     return len(rows)
 
 
+def recent_from_history(path: Path, n: int = RECENT_DAYS) -> list:
+    """화면의 60일 띠 = history.csv 에 자동으로 쌓인 마지막 n 줄 (그날 기록된 그대로)."""
+    with path.open(encoding="utf-8", newline="") as f:
+        rows = list(csv.DictReader(f))[-n:]
+    return [{"date": r["date"], "close": float(r["qqq_close"]), "rsi2": float(r["rsi2"]),
+             "state": r["state"], "weight": int(r["weight"]), "source": r["source"]} for r in rows]
+
+
 def write_prices(path: Path, qqq: pd.Series, tqqq: pd.Series):
     """오프라인 검증(교차 검증 60일)용 일봉 사본."""
     df = pd.DataFrame({"qqq": qqq, "tqqq": tqqq})
@@ -280,8 +288,9 @@ def main(argv=None):
         print("환율 실패:", e)
         fx = None
     state, frame = build_state(qqq, tqqq, now, nq, fx)
-    (out / "state.json").write_text(json.dumps(state, ensure_ascii=False, indent=1) + "\n", encoding="utf-8", newline="\n")
     added = append_history(out / "history.csv", frame, now)
+    state["recent"] = recent_from_history(out / "history.csv")
+    (out / "state.json").write_text(json.dumps(state, ensure_ascii=False, indent=1) + "\n", encoding="utf-8", newline="\n")
     write_prices(out / "prices.csv", qqq_done, tqqq.loc[tqqq.index.isin(qqq_done.index)])
     c = state["confirmed"]
     print(f"기준 {state['as_of']} · {c['state']} {c['weight']}% · RSI2 {c['rsi2']:.2f} · "

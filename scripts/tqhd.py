@@ -1,10 +1,12 @@
 """TQHD 판정 규칙 (파이썬 쪽). 같은 공식이 assets/core.js 에 있다 — 둘은 tests/test_cross.py 로 대조한다.
 
 상태
-  낮  day   : QQQ 종가가 50일선 또는 200일선 중 하나라도 위(같으면 위로 봄) → TQQQ 100%
-  밤  night : 50일선과 200일선 둘 다 아래 → 현금
-  사냥 hunt : 밤인 날 RSI2 < 15 → TQQQ 50%, RSI2 < 5 → 100%
-              사냥 중 RSI2 > 50 → 전량 매도(밤). 사냥 중 선 회복 → 청산 없이 낮.
+  낮  day   : QQQ 종가가 50일선 또는 200일선 중 하나라도 위(초과 >) → TQQQ 100%
+  밤  night : 두 선 다 같거나 아래(<=) → 현금
+  사냥 hunt : 밤인 날 비중은 RSI2 가 정한다 (양방향)
+              RSI2 < 5 → 100%, 5 ≤ RSI2 < 15 → 50%, 15 ≤ RSI2 ≤ 50 → 직전 비중 유지 (사냥 중일 때만),
+              RSI2 > 50 → 전량 매도(밤). 사냥 중 선 회복 → 청산 없이 낮.
+가격은 전부 배당조정(수정주가) 종가.
 이동평균은 오늘 종가를 포함한 단순이동평균, RSI2 는 Wilder 방식(기간 2).
 """
 from __future__ import annotations
@@ -55,22 +57,22 @@ def live_sma(sum_prev: float, n: int, price: float) -> float:
 
 
 def is_night(price: float, sma_fast: float, sma_slow: float) -> bool:
-    """둘 다 아래(엄격한 <)면 밤. 하나라도 위이거나 같으면 낮."""
-    return price < sma_fast and price < sma_slow
+    """두 선 다 같거나 아래(<=)면 밤. 하나라도 위(>)면 낮."""
+    return price <= sma_fast and price <= sma_slow
 
 
 def next_state(prev_state: str | None, prev_weight: int, night: bool, rsi: float):
     """전날 상태 + 오늘 (밤 여부, RSI2) → (상태, TQQQ 비중 %)."""
     if not night:
         return DAY, 100                          # 사냥 중 선 회복도 청산 없이 낮
+    if rsi < HUNT_FULL:                          # 밤이 되는 날에도 바로 사냥
+        return HUNT, 100
+    if rsi < HUNT_HALF:                          # 100% 였어도 5~15 로 올라오면 50% 로 줄임
+        return HUNT, 50
     if prev_state == HUNT:
         if rsi > HUNT_EXIT:
             return NIGHT, 0
-        return HUNT, 100 if rsi < HUNT_FULL else prev_weight
-    if rsi < HUNT_FULL:                          # 밤이 되는 날에도 바로 사냥
-        return HUNT, 100
-    if rsi < HUNT_HALF:
-        return HUNT, 50
+        return HUNT, prev_weight                 # 15~50: 직전 비중 유지
     return NIGHT, 0
 
 
@@ -86,7 +88,7 @@ def evaluate(base: dict, price: float) -> dict:
 
 # ── 임계 가격 ───────────────────────────────────
 def cross_price(sum_prev: float, n: int) -> float:
-    """가격 = 그 가격을 포함한 n일선 이 되는 가격. 이보다 아래면 그 선 아래."""
+    """가격 = 그 가격을 포함한 n일선 이 되는 가격. 이 가격 이하로 마감하면 그 선 이하(밤 쪽)."""
     return sum_prev / (n - 1)
 
 

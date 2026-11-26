@@ -70,3 +70,11 @@ def test_build_state_fields(prices):
     assert st["confirmed"]["state"] == frame["state"].iloc[-1]
     assert len(st["recent"]) == 60 and st["recent"][-1]["date"] == "2026-11-25"
     assert set(st["night_ratio"]) == {"1m", "3m", "12m"}
+
+
+def test_strip_reads_history_log(prices, tmp_path):
+    path = tmp_path / "history.csv"
+    U.append_history(path, _frame(prices, "2026-11-25"), datetime(2026, 11, 26, 22, 0, tzinfo=UTC))
+    rec = U.recent_from_history(path)
+    assert len(rec) == 60 and rec[-1]["date"] == "2026-11-25" and rec[-1]["source"] == "역산"
+    assert set(rec[-1]) == {"date", "close", "rsi2", "state", "weight", "source"}

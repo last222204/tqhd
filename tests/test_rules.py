@@ -45,43 +45,92 @@ def test_wilder_matches_pandas_ewm_after_warmup(prices):
 
 
 # ── 검증 3: 경계값 ──────────────────────────────
-def base(prev_state=NIGHT, prev_weight=0, ag=1.0, al=1.0):
-    # 직전 49일 합 4900 → 50일선 닿는 가격 100, 직전 199일 합 19701 → 200일선 닿는 가격 99
-    return {"qqq_prev_close": 100.0, "sum_prev_49": 4900.0, "sum_prev_199": 19701.0,
+def base(prev_state=NIGHT, prev_weight=0, ag=1.0, al=1.0, s199=19701.0):
+    # 직전 49일 합 4900 → 50일선 닿는 가격 100, 직전 199일 합 19701 → 200일선 닿는 가격 99 (19900 이면 100)
+    return {"qqq_prev_close": 100.0, "sum_prev_49": 4900.0, "sum_prev_199": s199,
             "wilder_avg_gain": ag, "wilder_avg_loss": al, "prev_state": prev_state, "prev_weight": prev_weight}
 
 
-def test_exactly_on_line_is_day():
-    b = base()
-    e = T.evaluate(b, 100.0)                                     # 정확히 50일선 위 (같음)
-    assert e["sma50"] == 100.0 and not e["night"] and e["state"] == DAY
-    e = T.evaluate(b, 99.0)                                      # 정확히 200일선과 같음, 50일선 아래
-    assert e["sma200"] == 99.0 and not e["night"] and e["state"] == DAY
+# ① 낮은 초과(>)만. 두 선 다 같거나 아래면 밤.
+def test_rule1_both_lines_equal_is_night():
+    e = T.evaluate(base(s199=19900.0), 100.0)                    # 50일선 = 200일선 = 종가
+    assert e["sma50"] == 100.0 and e["sma200"] == 100.0 and e["night"] and e["state"] == NIGHT
+    e = T.evaluate(base(s199=19900.0), 100.000001)               # 둘 다 살짝 위 → 낮
+    assert not e["night"] and e["state"] == DAY
 
 
-def test_both_below_is_night_one_above_is_day():
+def test_rule1_one_equal_other_below_is_night():
+    e = T.evaluate(base(), 99.0)                                 # 200일선과 같음, 50일선 아래
+    assert e["sma200"] == 99.0 and e["sma50"] > 99.0 and e["night"]
+    e = T.evaluate(base(s199=20099.0), 100.0)                    # 50일선과 같음, 200일선 아래
+    assert e["sma50"] == 100.0 and e["sma200"] > 100.0 and e["night"]
+
+
+def test_rule1_one_above_is_day_both_below_is_night():
     b = base()
-    assert T.evaluate(b, 98.999999)["night"]                     # 둘 다 아래 → 밤
+    e = T.evaluate(b, 100.0)                                     # 50일선과 같음, 200일선은 위(초과) → 낮
+    assert e["sma50"] == 100.0 and 100.0 > e["sma200"] and not e["night"]
     assert not T.evaluate(b, 99.5)["night"]                      # 200일선만 위 → 낮
-    assert T.is_night(1, 2, 3) and not T.is_night(2.5, 2, 3) and not T.is_night(3, 3, 2)
+    assert T.evaluate(b, 98.999999)["night"]                     # 둘 다 아래 → 밤
+    assert T.is_night(3, 3, 3) and T.is_night(1, 2, 3) and T.is_night(3, 3, 4)
+    assert not T.is_night(3.0000001, 3, 3) and not T.is_night(3, 2, 4) and not T.is_night(3, 4, 2)
 
 
-@pytest.mark.parametrize("prev, w, night, rsi, expect", [
+# ② 비중은 RSI2 가 정한다 (양방향). <5 → 100, 5~15 → 50, 15~50 → 유지(사냥 중), >50 → 전량 매도.
+RULE2 = [
     (DAY, 100, False, 3, (DAY, 100)),
     (DAY, 100, True, 30, (NIGHT, 0)),
     (DAY, 100, True, 14.99, (HUNT, 50)),                         # 밤이 되는 날에도 바로 사냥
     (DAY, 100, True, 4.99, (HUNT, 100)),
-    (NIGHT, 0, True, 15, (NIGHT, 0)),                            # 정확히 15 는 진입 아님
-    (NIGHT, 0, True, 5, (HUNT, 50)),                             # 정확히 5 는 절반
-    (HUNT, 50, True, 4.9, (HUNT, 100)),                          # 절반 → 전액
-    (HUNT, 100, True, 30, (HUNT, 100)),                          # 기다림 (시간 제한 없음)
-    (HUNT, 50, True, 50, (HUNT, 50)),                            # 정확히 50 은 청산 아님
-    (HUNT, 50, True, 50.01, (NIGHT, 0)),
+    (NIGHT, 0, True, 15, (NIGHT, 0)),                            # 정확히 15 는 진입 아님 (15~50 구간)
+    (NIGHT, 0, True, 14.999, (HUNT, 50)),
+    (NIGHT, 0, True, 5, (HUNT, 50)),                             # 정확히 5 는 50% (5 미만만 100%)
+    (NIGHT, 0, True, 4.999, (HUNT, 100)),
+    (HUNT, 50, True, 4.9, (HUNT, 100)),                          # 50% → 5 아래 → 100%
+    (HUNT, 100, True, 10, (HUNT, 50)),                           # 100% → 5~15 로 올라옴 → 50%
+    (HUNT, 100, True, 5, (HUNT, 50)),                            # 정확히 5 도 50%
+    (HUNT, 100, True, 14.99, (HUNT, 50)),
+    (HUNT, 100, True, 15, (HUNT, 100)),                          # 15~50 → 직전 비중 유지
+    (HUNT, 50, True, 15, (HUNT, 50)),
+    (HUNT, 100, True, 30, (HUNT, 100)),                          # 시간 제한 없음
+    (HUNT, 50, True, 50, (HUNT, 50)),                            # 정확히 50 은 유지
+    (HUNT, 100, True, 50, (HUNT, 100)),
+    (HUNT, 50, True, 50.01, (NIGHT, 0)),                         # 50 초과 → 전량 매도
+    (HUNT, 100, True, 50.01, (NIGHT, 0)),
     (HUNT, 50, False, 80, (DAY, 100)),                           # 사냥 중 선 회복 → 청산 없이 낮
+    (HUNT, 100, False, 3, (DAY, 100)),
     (NIGHT, 0, False, 3, (DAY, 100)),
-])
-def test_next_state(prev, w, night, rsi, expect):
+]
+
+
+@pytest.mark.parametrize("prev, w, night, rsi, expect", RULE2)
+def test_rule2_weight_follows_rsi(prev, w, night, rsi, expect):
     assert T.next_state(prev, w, night, rsi) == expect
+
+
+def test_rule2_round_trip_100_50_100():
+    """한 사냥 안에서 100 → 50 → 100 → 50 → 유지 → 청산."""
+    s, w, seen = NIGHT, 0, []
+    for rsi in (3, 10, 4, 12, 30, 45, 51):
+        s, w = T.next_state(s, w, True, rsi)
+        seen.append((s, w))
+    assert seen == [(HUNT, 100), (HUNT, 50), (HUNT, 100), (HUNT, 50), (HUNT, 50), (HUNT, 50), (NIGHT, 0)]
+
+
+# ③ 가격은 배당조정(수정주가) 종가
+def test_rule3_fetch_uses_adjusted_close(monkeypatch):
+    import pandas as pd
+    import yfinance as yf
+    import update_state as U
+    seen = {}
+
+    def fake(symbol, **kw):
+        seen.update(kw)
+        idx = pd.DatetimeIndex(["2026-11-24", "2026-11-25"])
+        return pd.DataFrame({"Close": [1.0, 2.0]}, index=idx)
+    monkeypatch.setattr(yf, "download", fake)
+    s = U.fetch_daily("QQQ")
+    assert seen["auto_adjust"] is True and list(s) == [1.0, 2.0]
 
 
 # ── 검증 4: 임계 가격 왕복 ──────────────────────
@@ -102,4 +151,4 @@ def test_cross_price_round_trip():
     lower = min(p50, p200)
     assert T.evaluate(b, lower * (1 - 1e-9))["state"] == NIGHT
     assert T.evaluate(b, lower * (1 + 1e-9))["state"] == DAY
-    assert T.evaluate(b, lower)["state"] == DAY                  # 정확히 그 가격은 '같음' → 낮
+    assert T.evaluate(b, lower)["state"] == NIGHT                # 정확히 그 가격 = 선과 같음 → 밤

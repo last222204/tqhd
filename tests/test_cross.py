@@ -6,6 +6,8 @@ import pytest
 
 import tqhd as T
 import update_state as U
+from test_rules import RULE2
+from test_rules import base as rbase
 
 TOL = 1e-9
 
@@ -50,12 +52,33 @@ def test_js_wilder_step_matches_python_known_values(js):
     assert js("rsiFrom", 1, 0) == 100
 
 
-@pytest.mark.parametrize("prev, w, night, rsi", [
-    ("day", 100, True, 14.99), ("night", 0, True, 15), ("night", 0, True, 5), ("hunt", 50, True, 4.9),
-    ("hunt", 50, True, 50), ("hunt", 50, True, 50.01), ("hunt", 50, False, 80), ("day", 100, True, 4.99)])
-def test_js_next_state_same_as_python(js, prev, w, night, rsi):
-    s, wt = T.next_state(prev, w, night, rsi)
-    assert js("nextState", prev, w, night, rsi) == {"state": s, "weight": wt}
+@pytest.mark.parametrize("prev, w, night, rsi, expect", RULE2)
+def test_js_rule2_same_as_python(js, prev, w, night, rsi, expect):
+    assert js("nextState", prev, w, night, rsi) == {"state": expect[0], "weight": expect[1]}
+
+
+@pytest.mark.parametrize("s199, price, night", [
+    (19900.0, 100.0, True),          # ① 두 선 다 같음 → 밤
+    (19900.0, 100.000001, False),
+    (19701.0, 99.0, True),           # 200일선과 같음, 50일선 아래 → 밤
+    (20099.0, 100.0, True),          # 50일선과 같음, 200일선 아래 → 밤
+    (19701.0, 100.0, False),         # 50일선과 같음, 200일선 위 → 낮
+    (19701.0, 98.999999, True),
+])
+def test_js_rule1_same_as_python(js, s199, price, night):
+    b = rbase(s199=s199)
+    jv, pv = js("evaluate", b, price), T.evaluate(b, price)
+    assert jv["night"] is night and pv["night"] is night and jv["state"] == pv["state"]
+    assert js("isNight", 3, 3, 3) is True and js("isNight", 3.0000001, 3, 3) is False
+
+
+def test_rule3_card_percent_is_from_current_price(state, js):
+    """③ 화면의 % 는 '지금 가격 대비' (배당조정 $ 를 증권사 차트와 맞춰 볼 필요 없게)."""
+    v = js("buildView", state, quotes(LIVE_NOW - 20_000, qqq=640.0), LIVE_NOW)
+    for r in v["card"]["rows"]:
+        assert r["fromRef"] == pytest.approx(r["price"] / 640.0 - 1, abs=1e-12)
+        assert r["fromPrev"] == pytest.approx(r["price"] / state["qqq_prev_close"] - 1, abs=1e-12)
+    assert "배당조정" in state["price_basis"]
 
 
 # ── 검증 4: JS 임계 가격을 넣으면 정말 바뀌는지 ──

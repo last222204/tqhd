@@ -132,6 +132,7 @@
     }
     h += '<div class="chg">' + chg(c.changes.down, "↓", "내리면") + chg(c.changes.up, "↑", "오르면") + "</div>";
 
+    h += '<div class="rh"><span>기준선 · 닿는 가격</span><span>' + (ref ? "현재가 대비" : "전일 종가 대비") + "</span></div>";
     h += '<div class="rows">';
     c.rows.forEach(function (r, i) {
       var isLine = r.key === "sma50" || r.key === "sma200";
@@ -146,8 +147,8 @@
     h += "</div>";
     h += '<div class="rsi"><span class="n">RSI2 (' + (ref ? (ref.kind === "open" ? "예상" : "지금") : "확정") + ')</span><span class="v">' +
          num(ref ? c.rsi2 : v.confirmed.rsi2, 1) + "</span></div>";
-    h += '<div class="basis">% 는 ' + (ref ? "위 가격에서 / 전일 종가에서" : "전일 종가에서") +
-         " 그만큼 움직여 그 가격으로 마감하면. TQQQ≈ 는 전일 종가 × (1 + 3 × QQQ 변화율).</div>";
+    h += '<div class="basis">$ 는 전부 <b>배당조정(수정주가) 종가</b> 기준이라 증권사 차트의 이동평균 $ 와 다를 수 있다. ' +
+         "판단은 오른쪽 % (" + (ref ? "현재가" : "전일 종가") + " 대비, 그만큼 움직여 마감하면)로. TQQQ≈ = 전일 종가 × (1 + 3 × QQQ 변화율).</div>";
     el.innerHTML = h;
   }
 
@@ -179,8 +180,59 @@
           : lastOk && lastTry === lastOk ? "실시간 연결됨 · " + when(lastOk) + " 받음 (30초마다)"
           : "실시간 연결 끊김 · 마지막 시도 " + when(lastTry);
     $("foot").innerHTML = "<b>기준</b> " + v.asOf + " 종가 (" + state.price_basis + ") · 자동 기록 " + when(v.generatedAt) + " KST<br>" +
-      "<b>규칙</b> 50·200일선 둘 다 아래 = 밤, 하나라도 위 = 낮 · 밤에 RSI2 &lt; 15 사냥 50%, &lt; 5 사냥 100%, 사냥 중 RSI2 &gt; 50 청산 · 사냥 중 선 회복 = 그대로 낮<br>" +
+      "<b>규칙</b> 50·200일선 하나라도 위(초과) = 낮, 둘 다 같거나 아래 = 밤 · 밤의 비중은 RSI2: &lt; 5 → 100%, 5~15 → 50%, 15~50 → 직전 유지, &gt; 50 → 전량 매도 · 사냥 중 선 회복 = 그대로 낮<br>" +
       "<b>실시간</b> " + p + (fakeNow != null ? " · <b>시험 시계</b> " + T.fmtKst(now()) : "");
+  }
+
+  // ── 밤 비율 ───────────────────────────────
+  function regime() {
+    var r = state.night_ratio || {}, h = "<h2>밤 비율 (밤 + 사냥 날의 비중)</h2><div class=\"ratio\">";
+    [["1m", "1개월"], ["3m", "3개월"], ["12m", "12개월"]].forEach(function (k) {
+      var x = r[k[0]], c = x == null ? "" : x >= 30 ? "hi" : x < 20 ? "lo" : "";
+      h += '<div class="' + c + '"><div class="k">' + k[1] + '</div><div class="v">' + (x == null ? "–" : x.toFixed(1) + "%") + "</div></div>";
+    });
+    h += '</div><div class="legend"><span class="lo">10%대</span> → 확장기, 룰이 거의 작동하지 않는 구간<br>' +
+         '<span class="hi">30% 이상</span> → 침체 신호, 룰이 돈을 벌기 시작하는 구간</div>';
+    $("regime").innerHTML = h;
+  }
+
+  // ── 최근 60거래일 띠 (history.csv 자동 기록) ──
+  var histSel = null;
+  function histLine(r) {
+    var d = new Date(r.date + "T12:00:00Z");
+    return (d.getUTCMonth() + 1) + "/" + d.getUTCDate() + "(" + WD[d.getUTCDay()] + ") · QQQ " + usd(r.close) + " · RSI2 " + num(r.rsi2, 1) +
+      " · <b>" + T.stateText(r.state, r.weight) + "</b>" + (r.source === "역산" ? ' <span class="src">역산</span>' : "");
+  }
+  function hist() {
+    var rs = state.recent || [];
+    if (!rs.length) { $("hist").innerHTML = "<h2>최근 상태</h2><div class=\"prev\">기록 없음</div>"; return; }
+    if (histSel == null || histSel >= rs.length) histSel = rs.length - 1;
+    var h = "<h2>최근 " + rs.length + "거래일 상태 <small>(매일 자동 기록 · 눌러서 보기)</small></h2><div class=\"strip\" id=\"strip\">";
+    rs.forEach(function (r, i) {
+      h += '<span class="b b-' + r.state + (r.state === "hunt" && r.weight === 100 ? " full" : "") + (i === histSel ? " sel" : "") +
+           '" data-i="' + i + '" title="' + r.date + " " + T.stateText(r.state, r.weight) + '"></span>';
+    });
+    h += '</div><div class="ends"><span>' + rs[0].date.slice(5).replace("-", "/") + "</span><span>" + rs[rs.length - 1].date.slice(5).replace("-", "/") + "</span></div>";
+    h += '<div class="pick">' + histLine(rs[histSel]) + "</div>";
+    h += '<div class="keys"><span class="b b-day"></span>낮 <span class="b b-night"></span>밤 <span class="b b-hunt"></span>사냥 50% <span class="b b-hunt full"></span>사냥 100%</div>';
+    $("hist").innerHTML = h;
+  }
+  function pickAt(x, y) {
+    var el = document.elementFromPoint(x, y);
+    var b = el && el.closest && el.closest("#strip [data-i]");
+    if (!b) return;
+    var i = +b.getAttribute("data-i");
+    if (i !== histSel) { histSel = i; hist(); }
+  }
+  $("hist").addEventListener("pointerdown", function (e) { pickAt(e.clientX, e.clientY); });
+  $("hist").addEventListener("pointermove", function (e) { if (e.pointerType === "mouse" || e.buttons) pickAt(e.clientX, e.clientY); });
+
+  // ── 각오 카드 (고정) ──────────────────────
+  function resolve() {
+    $("resolve").innerHTML = "<h2>각오 · 1999~2026 QQQ 검증</h2>" +
+      "<p><b>사냥 승률 74% · 평균 +1.9% · 최악 -40%</b><br>최대 평가손실: -57% (2004년 이후) / -96% (1999년 포함)</p>" +
+      "<dl><dt>룰이 지는 구간</dt><dd>25% 넘는 급락이 없는 강세장<br>2010~2019년에 3배 단순보유 대비 연 9%p 뒤처졌다. 설계대로다.</dd>" +
+      "<dt>사냥이 지는 장</dt><dd>계단식으로 갈아내리는 하락장<br>닷컴에서 사냥 기여는 -2.1%였다. 헛걸음이 이어지는 게 정상이다.</dd></dl>";
   }
 
   function render() {
@@ -190,6 +242,7 @@
     }
     var v = T.buildView(state, quotes, now());
     banner(v); alerts(v); card(v); tqqqCard(v); fx(v); foot(v);
+    regime(); hist(); resolve();
     window.__view = v;
   }
 
