@@ -1,11 +1,7 @@
-# 내 기록과 비밀값은 절대 git 에 올리지 않는다
-.env
-data/
-*.db
 __pycache__/
 .pytest_cache/
 .venv/
-
-# 캡처 이미지는 보관 zip 으로
-qa/shots/
-qa/비교/
+.env
+*.log
+.wrangler/
+node_modules/
