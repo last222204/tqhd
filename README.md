@@ -3,6 +3,12 @@
 지금 이 순간 뭘 해야 하는지(☀️ 낮 / 🌙 밤 / 🏹 사냥)를 보여주는 한 페이지. 기준 문서는 [TQHD_SITE_SPEC.md](TQHD_SITE_SPEC.md) 하나다.
 입력 기능은 없고, 기록은 GitHub Actions 가 매일 자동으로 쌓는다.
 
+## 주소
+
+- 사이트: https://last222204.github.io/tqhd/  (GitHub Pages, main 브랜치 루트)
+- 실시간 프록시: https://tqhd-quotes.last222204.workers.dev/quotes  (Cloudflare Workers `tqhd-quotes`, 대시보드에서 worker/worker.js 내용으로 배포)
+- 화면 파일을 고치면 index.html 의 `?v=` 숫자를 올린다 (Pages 10분 캐시 때문에 옛 파일이 보이는 것 방지)
+
 ## 구조
 
 | 파일 | 하는 일 |
