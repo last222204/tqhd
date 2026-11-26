@@ -1,0 +1,125 @@
+:root {
+  --bg: #0e1014;
+  --card: #171a21;
+  --line: #262a33;
+  --text: #ecebe8;
+  --muted: #8d929c;
+  --dim: #5d626c;
+  --day: #ffd166;
+  --day-bg: #3a3112;
+  --night: #9aa6ff;
+  --night-bg: #1b1f3d;
+  --hunt: #ff7a45;
+  --hunt-bg: #3d1d10;
+  --up: #3ecf8e;
+  --down: #ff6b6b;
+  --warn: #f0a500;
+  --warn-bg: #2b220c;
+  --off: #3a3d44;
+}
+
+* { box-sizing: border-box; }
+html { -webkit-text-size-adjust: 100%; }
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--text);
+  font: 14px/1.4 -apple-system, BlinkMacSystemFont, "Apple SD Gothic Neo", "Malgun Gothic", "Noto Sans KR", system-ui, sans-serif;
+  font-variant-numeric: tabular-nums;
+  padding: max(8px, env(safe-area-inset-top)) 12px 32px;
+  max-width: 560px;
+  margin-inline: auto;
+}
+
+.top { display: flex; justify-content: space-between; align-items: baseline; gap: 8px; margin-bottom: 6px; }
+.brand { font-weight: 800; letter-spacing: .04em; color: var(--muted); font-size: 13px; }
+.fx { font-size: 12px; color: var(--muted); white-space: nowrap; }
+.fx b { color: var(--text); font-weight: 600; }
+
+/* ── 상태 배너 ───────────────────── */
+.banner { border-radius: 14px; padding: 10px 13px 9px; background: var(--card); border: 1px solid var(--line); }
+.banner.loading { color: var(--muted); }
+.banner .row { display: flex; align-items: baseline; gap: 10px; }
+.banner .lbl { font-size: 13px; color: var(--muted); min-width: 54px; }
+.banner .big { white-space: nowrap; font-size: 28px; font-weight: 800; line-height: 1.15; letter-spacing: -.01em; }
+.banner .act { font-size: 13px; font-weight: 700; margin-left: auto; text-align: right; white-space: nowrap; }
+.banner .conf { margin-top: 3px; color: var(--muted); font-size: 13px; }
+.banner .conf .st { color: #b9bcc3; font-weight: 600; }
+.banner .meta { margin-top: 3px; font-size: 11px; color: var(--dim); line-height: 1.3; }
+.banner .diff {
+  margin-top: 7px; padding: 8px 10px; border-radius: 10px; font-weight: 700; font-size: 14px;
+  background: #3b1414; color: #ffb4b4; border: 1px solid #7a2a2a;
+}
+.banner .same { margin-top: 4px; font-size: 12px; color: var(--muted); }
+
+.s-day { background: linear-gradient(160deg, var(--day-bg), var(--card) 70%); border-color: #6b5a1d; }
+.s-day .big, .s-day .act { color: var(--day); }
+.s-night { background: linear-gradient(160deg, var(--night-bg), var(--card) 70%); border-color: #343a78; }
+.s-night .big, .s-night .act { color: var(--night); }
+.s-hunt { background: linear-gradient(160deg, var(--hunt-bg), var(--card) 70%); border-color: #8a3a1a; }
+.s-hunt .big, .s-hunt .act { color: var(--hunt); }
+.s-off { background: var(--card); border-color: var(--off); }
+.s-off .big { color: var(--dim); font-size: 22px; }
+.off-msg { margin-top: 8px; padding: 8px 10px; border-radius: 10px; background: #22252c; color: #c9ccd2; font-size: 14px; font-weight: 600; }
+
+/* 갭 카드 (배너 자리) */
+.gap .head { font-size: 16px; font-weight: 800; }
+.gap .sub { font-size: 12px; color: var(--muted); margin-top: 2px; }
+.gap .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; margin: 7px 0 2px; }
+.gap .grid > div { background: rgba(255,255,255,.04); border-radius: 9px; padding: 4px 8px; }
+.gap .grid .k { font-size: 11px; color: var(--muted); }
+.gap .grid .v { font-size: 16px; font-weight: 800; }
+.gap .grid .v small { font-size: 12px; font-weight: 700; }
+.gap dl { display: grid; grid-template-columns: auto 1fr; gap: 3px 12px; margin: 10px 0 0; align-items: baseline; }
+.gap dt { color: var(--muted); font-size: 13px; }
+.gap dd { margin: 0; text-align: right; font-weight: 600; }
+.gap dd .st { font-size: 20px; font-weight: 800; }
+.gap .note { margin-top: 3px; font-size: 11px; color: var(--muted); line-height: 1.3; }
+.gap .frozen { margin-top: 8px; padding: 6px 9px; border-radius: 8px; background: #22252c; color: #e9d08a; font-size: 13px; font-weight: 600; }
+
+/* ── 경고 문구 (배너 바로 아래 고정) ─ */
+.warn {
+  margin: 6px 0 0; padding: 6px 10px; border-radius: 10px;
+  background: var(--warn-bg); border: 1px solid #6b4f10; color: #ffd98a; font-size: 13.5px; line-height: 1.35;
+}
+.warn b { color: #fff1cf; }
+.alert { margin-top: 8px; padding: 9px 12px; border-radius: 12px; background: #3b1414; border: 1px solid #7a2a2a; color: #ffc4c4; font-size: 14px; font-weight: 600; }
+
+/* ── 기준선 카드 ─────────────────── */
+.card { margin-top: 8px; background: var(--card); border: 1px solid var(--line); border-radius: 14px; padding: 9px 12px; }
+.card.off { opacity: .95; }
+.card h2 { margin: 0; font-size: 13px; color: var(--muted); font-weight: 700; letter-spacing: .02em; }
+.px { display: flex; align-items: baseline; gap: 8px; flex-wrap: wrap; margin-top: 2px; }
+.px .p { font-size: 22px; font-weight: 800; }
+.px .c { font-weight: 700; }
+.px .t { font-size: 12px; color: var(--dim); margin-left: auto; }
+.prev { font-size: 13px; color: var(--muted); }
+.up { color: var(--up); }
+.down { color: var(--down); }
+
+.chg { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; margin: 6px 0 2px; }
+.chg > div { background: #1f232c; border-radius: 9px; padding: 4px 8px; }
+.chg .k { font-size: 11px; color: var(--muted); }
+.chg .v { font-size: 16px; font-weight: 800; }
+.chg .v small { font-size: 11px; color: var(--muted); font-weight: 600; }
+.chg .to { font-size: 12px; font-weight: 700; white-space: nowrap; }
+.chg .none { color: var(--dim); font-size: 13px; }
+
+.rows { margin-top: 2px; }
+.r { display: grid; grid-template-columns: 1fr auto; column-gap: 8px; padding: 3px 0; border-top: 1px solid var(--line); }
+.r:first-child { border-top: 0; }
+.r .n { font-size: 14px; font-weight: 700; }
+.r .n small { font-weight: 500; color: var(--muted); font-size: 12px; }
+.r .d { text-align: right; font-weight: 800; font-size: 15px; }
+.r .s { grid-column: 1 / -1; font-size: 11.5px; color: var(--muted); line-height: 1.3; }
+.r .s b { color: #c4c7cd; font-weight: 600; }
+.r.sep { margin-top: 4px; border-top: 1px solid #343944; }
+.rsi { display: flex; justify-content: space-between; align-items: baseline; padding: 3px 0 0; border-top: 1px solid #343944; margin-top: 4px; }
+.rsi .n { font-weight: 700; }
+.rsi .v { font-size: 17px; font-weight: 800; }
+.basis { font-size: 10.5px; color: var(--dim); margin-top: 3px; line-height: 1.3; }
+
+.tq .px .p { font-size: 20px; }
+
+.foot { margin-top: 18px; font-size: 11px; color: var(--dim); line-height: 1.6; }
+.foot b { color: var(--muted); font-weight: 600; }

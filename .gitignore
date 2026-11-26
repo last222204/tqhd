@@ -5,3 +5,4 @@ __pycache__/
 *.log
 .wrangler/
 node_modules/
+.claude/

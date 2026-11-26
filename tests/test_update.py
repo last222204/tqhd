@@ -61,6 +61,7 @@ def test_history_only_appends(prices, tmp_path):
 
 def test_build_state_fields(prices):
     now = datetime(2026, 11, 26, 22, 0, tzinfo=UTC)
+    prices = prices.loc[:"2026-11-25"]
     st, frame = U.build_state(prices["qqq"], prices["tqqq"], now, (26105.5, "2026-11-25T21:00:00Z", "5분봉"),
                               {"price": 1343.25, "date": "2026-11-26"})
     assert st["as_of"] == "2026-11-25" and st["qqq_prev_close"] == prices["qqq"].iloc[-1]

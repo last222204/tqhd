@@ -1,0 +1,38 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="color-scheme" content="dark">
+  <meta name="theme-color" content="#0e1014">
+  <title>TQHD</title>
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🏹</text></svg>">
+  <link rel="stylesheet" href="assets/style.css">
+</head>
+<body>
+  <header class="top">
+    <span class="brand">TQHD</span>
+    <span id="fx" class="fx">USD/KRW –</span>
+  </header>
+
+  <main>
+    <section id="banner" class="banner loading">불러오는 중…</section>
+
+    <p class="warn" id="warn">
+      장중 상태는 참고용. <b>주문은 마감 직전 종가로 판단한다.</b><br>
+      장중에 선을 넘었다가 종가에 되돌아오는 경우가 있다.
+    </p>
+
+    <div id="alerts"></div>
+
+    <section id="card" class="card"></section>
+    <section id="tqqq" class="card tq"></section>
+  </main>
+
+  <footer id="foot" class="foot"></footer>
+
+  <script src="assets/config.js"></script>
+  <script src="assets/core.js"></script>
+  <script src="assets/app.js"></script>
+</body>
+</html>

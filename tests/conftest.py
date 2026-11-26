@@ -30,5 +30,11 @@ def prices():
 
 
 @pytest.fixture(scope="session")
-def state():
-    return json.loads((ROOT / "data" / "state.json").read_text(encoding="utf-8"))
+def state(prices):
+    """2026-11-25 종가 기준으로 고정한 state (매일 갱신되는 data/state.json 과 무관하게 같은 시험)."""
+    from datetime import datetime, timezone
+    import update_state as U
+    p = prices.loc[:"2026-11-25"]
+    st, _ = U.build_state(p["qqq"], p["tqqq"], datetime(2026, 11, 26, 14, 0, tzinfo=timezone.utc),
+                          (26105.5, "2026-11-25T21:00:00Z", "5분봉"), {"price": 1343.25, "date": "2026-11-26"})
+    return json.loads(json.dumps(st))

@@ -280,7 +280,7 @@ def main(argv=None):
         print("환율 실패:", e)
         fx = None
     state, frame = build_state(qqq, tqqq, now, nq, fx)
-    (out / "state.json").write_text(json.dumps(state, ensure_ascii=False, indent=1) + "\n", encoding="utf-8")
+    (out / "state.json").write_text(json.dumps(state, ensure_ascii=False, indent=1) + "\n", encoding="utf-8", newline="\n")
     added = append_history(out / "history.csv", frame, now)
     write_prices(out / "prices.csv", qqq_done, tqqq.loc[tqqq.index.isin(qqq_done.index)])
     c = state["confirmed"]
