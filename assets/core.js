@@ -303,7 +303,7 @@ var TQHD = (function () {
     FAST: FAST, SLOW: SLOW, HUNT_HALF: HUNT_HALF, HUNT_FULL: HUNT_FULL, HUNT_EXIT: HUNT_EXIT,
     rsiFrom: rsiFrom, rsiStep: rsiStep, liveSma: liveSma, isNight: isNight, nextState: nextState,
     evaluate: evaluate, crossPrice: crossPrice, rsiPrice: rsiPrice, levels: levels, changes: changes,
-    tqqqAt: tqqqAt, marketMode: marketMode, buildView: buildView, stateText: stateText, action: action,
+    tqqqAt: tqqqAt, marketMode: marketMode, buildView: buildView, card: card, stateText: stateText, action: action,
     fmtKst: fmtKst, etDate: etDate
   };
 })();

@@ -9,7 +9,7 @@
   <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🏹</text></svg>">
   <link rel="stylesheet" as="style" crossorigin
     href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.css">
-  <link rel="stylesheet" href="assets/style.css?v=6">
+  <link rel="stylesheet" href="assets/style.css?v=7">
 </head>
 <body>
   <header class="top">
@@ -18,6 +18,15 @@
   </header>
 
   <main>
+    <!-- ① 가격 -->
+    <h3 class="sec">가격</h3>
+    <section id="prices" class="card prices">
+      <div class="sk w-30"></div>
+      <div class="sk w-90 tall"></div>
+    </section>
+
+    <!-- ② 지금 상태 -->
+    <h3 class="sec">지금 상태</h3>
     <section id="banner" class="banner">
       <div id="bannerBody" class="bb">
         <div class="sk w-30"></div>
@@ -29,21 +38,30 @@
         <img id="mascotImg" alt="" width="64" height="64" decoding="async">
       </picture>
     </section>
-
     <div id="todo" class="todo"><span class="sk w-30"></span></div>
     <p class="warn">판정은 종가 기준 · 장중은 참고</p>
     <div id="alerts"></div>
 
+    <!-- ③ 기준선 -->
+    <h3 class="sec">기준선</h3>
     <section id="card" class="card">
       <div class="sk w-30"></div>
-      <div class="sk w-50 tall"></div>
       <div class="sk w-90"></div>
       <div class="sk w-90"></div>
       <div class="sk w-90"></div>
     </section>
-    <section id="tqqq" class="card"><div class="sk w-30"></div><div class="sk w-50"></div></section>
-    <section id="regime" class="card"></section>
+
+    <!-- ④ 흐름 -->
+    <h3 class="sec">흐름</h3>
     <section id="hist" class="card"></section>
+    <section id="regime" class="card"></section>
+
+    <!-- ⑤ 휴장 갭 예상 -->
+    <h3 class="sec">휴장 갭 예상 · NQ 선물</h3>
+    <section id="gap" class="card gapc"></section>
+
+    <!-- ⑥ 각오 -->
+    <h3 class="sec">각오</h3>
     <section id="resolve" class="card resolve"></section>
   </main>
 
@@ -51,9 +69,9 @@
     <details id="info"><summary aria-label="자세히">ⓘ</summary><div id="infoBody"></div></details>
   </footer>
 
-  <script src="assets/config.js?v=6"></script>
-  <script src="assets/core.js?v=6"></script>
-  <script src="assets/ui.js?v=6"></script>
-  <script src="assets/app.js?v=6"></script>
+  <script src="assets/config.js?v=7"></script>
+  <script src="assets/core.js?v=7"></script>
+  <script src="assets/ui.js?v=7"></script>
+  <script src="assets/app.js?v=7"></script>
 </body>
 </html>

@@ -111,10 +111,47 @@ def test_no_service_worker():
 
 
 def test_gap_number_and_change_stay_on_one_line():
+    """휴장 갭 카드(맨 아래): 숫자와 등락률은 한 줄, 정규장 중에는 회색 비활성."""
     css = (ROOT / "assets" / "style.css").read_text(encoding="utf-8")
-    rule = re.search(r"\.grid \.v \{[^}]*\}", css).group(0)
+    rule = re.search(r"\.gp \.v \{[^}]*\}", css).group(0)
     assert "white-space: nowrap" in rule
-    assert ".bb > .grid" in css and "grid-column: 1 / -1" in css          # 휴장 칸은 마스코트 아래 전체 폭
+    off = re.search(r"\.gapc\.off \{[^}]*\}", css).group(0)
+    assert "opacity: 0.45" in off and "grayscale(1)" in off
+    js = (ROOT / "assets" / "app.js").read_text(encoding="utf-8")
+    assert '"card gapc" + (off ? " off" : "")' in js and "정규장 중 · 휴장 때만 씀" in js
+
+
+def test_section_order():
+    """① 가격 → ② 지금 상태 → ③ 기준선 → ④ 흐름 → ⑤ 휴장 갭 → ⑥ 각오. 따로 있던 TQQQ 카드는 없어짐."""
+    order = [HTML.index(f'id="{k}"') for k in ("prices", "banner", "card", "hist", "gap", "resolve")]
+    assert order == sorted(order)
+    assert 'id="tqqq"' not in HTML
+    assert HTML.count('class="sec"') == 6
+
+
+def test_tqqq_always_before_qqq():
+    js = (ROOT / "assets" / "app.js").read_text(encoding="utf-8")
+    line = next(l for l in js.splitlines() if 'priceCell("TQQQ"' in l)            # ① 가격 두 칸
+    assert line.index('priceCell("TQQQ"') < line.index('priceCell("QQQ"')
+    assert "<span></span><span>TQQQ</span><span>QQQ</span>" in js                  # ③ 표 머리
+    box = next(l for l in js.splitlines() if 'pline("TQQQ"' in l)                   # ③ 바뀌는 가격 상자
+    assert box.index('pline("TQQQ"') < box.index('pline("QQQ"')
+    row = next(l for l in js.splitlines() if "pc(r.tqqq" in l)                      # ③ 표 줄
+    assert row.index("pc(r.tqqq") < row.index("pc(r.price")
+    gap = js.index("예상 시가 TQQQ")                                               # ⑤ 휴장 갭
+    assert gap < js.index("예상 시가 QQQ")
+
+
+def test_card_export_is_prev_close_basis(ui, state):
+    """휴장 때 기준선은 선물 예상 시가가 아니라 확정 종가 기준 (T.card(state, null))."""
+    c = ui(f"TQHD.card({json.dumps(state)}, null)")
+    assert c["basisIsPrev"] and c["ref"] is None and c["prev"] == state["qqq_prev_close"]
+    assert [r["key"] for r in c["rows"]] == ["sma50", "sma200", "hunt_half", "hunt_full", "hunt_exit"]
+
+
+def test_basis_toggle_is_safe():
+    js = (ROOT / "assets" / "app.js").read_text(encoding="utf-8")
+    assert '"tqhd.basis"' in js and js.count("try {") >= 2 and "catch (e)" in js
 
 
 def test_gauges_are_plain_divs_6px():
