@@ -275,6 +275,131 @@ var TQHD = (function () {
     return v;
   }
 
+  // ── 맨 위 가격 칸 (보기용 · 판정에는 안 씀) ──
+  /* TQQQ · QQQ 각각, 위에서부터 되는 것:
+       regular  정규장 실시간 (5분 안의 정규장 가격)
+       pre/post 프리장·애프터장 실시간 (10분 안의 시간외 체결)
+                TQQQ 만 멈췄으면 QQQ 시간외 가격의 3배 환산 (est)
+       futures  선물 추정: 가장 최근 실제 체결 (P0, t0) 과 그 직전 선물 5분봉 F0 → P0 × F / F0
+       close    가장 최근 정규장 종가
+     chg 는 가장 최근 정규장 종가(base) 대비. close 일 때만 그 전 종가 대비. */
+  var EXT_MAX_AGE = 10 * 60 * 1000;
+  var PRE_SPAN = 5.5 * 3600 * 1000, POST_SPAN = 4 * 3600 * 1000;   // 04:00 ~ 개장, 마감 ~ +4시간 (조기 폐장도 같음)
+  var BAR = 5 * 60 * 1000, ANCHOR_SLACK = 60 * 1000, ANCHOR_MAX_GAP = 30 * 60 * 1000;
+
+  function tradeOf(x) {
+    return x && typeof x.price === "number" && x.price > 0 && typeof x.time === "number" ? { price: x.price, t: x.time * 1000 } : null;
+  }
+
+  /* 지금이 어느 구간인지: regular | pre | post | none, 가장 최근에 끝난 정규장(last), 그다음 정규장 개장 시각(afterLast) */
+  function sessionPhase(state, now) {
+    var ss = (state.calendar && state.calendar.sessions) || [], i, s, o, c, li = -1;
+    var out = { phase: "none", session: null, last: null, afterLast: null };
+    for (i = 0; i < ss.length; i++) {
+      s = ss[i]; o = ms(s.open_utc); c = ms(s.close_utc);
+      if (c <= now) { out.last = s; li = i; }
+      if (o <= now && now < c) { out.phase = "regular"; out.session = s; }
+      else if (o - PRE_SPAN <= now && now < o) { out.phase = "pre"; out.session = s; }
+      else if (c <= now && now < c + POST_SPAN) { out.phase = "post"; out.session = s; }
+    }
+    if (li >= 0 && li + 1 < ss.length) out.afterLast = ms(ss[li + 1].open_utc);
+    return out;
+  }
+
+  /* 가장 최근 정규장 종가: 프록시의 오늘 종가 → 프록시 정규장 가격(마감 시각 이후 찍힌 것) → state.json 확정 종가 */
+  function lastClose(state, q, ph, stateClose) {
+    var L = ph.last, lc = L ? ms(L.close_utc) : null, rc, rp;
+    if (q && L) {
+      rc = tradeOf(q.regular_close);
+      if (rc && rc.t >= lc - CLOSE_GRACE && (ph.afterLast == null || rc.t < ph.afterLast)) return { price: rc.price, date: L.date, t: rc.t };
+      rp = tradeOf(q);
+      if (rp && rp.t >= lc - CLOSE_GRACE && (ph.afterLast == null || rp.t < ph.afterLast)) return { price: rp.price, date: L.date, t: rp.t };
+    }
+    if (stateClose == null) return null;
+    return { price: stateClose, date: state.as_of, t: state.as_of_close_utc ? ms(state.as_of_close_utc) : null, fromState: true };
+  }
+
+  /* 선물 5분봉 [[초, 값], ...] 에서 t0 바로 전에 끝난 봉의 종가 */
+  function futuresAt(bars, t0) {
+    var best = null;
+    for (var i = 0; bars && i < bars.length; i++) {
+      var end = bars[i][0] * 1000 + BAR;
+      if (end <= t0 + ANCHOR_SLACK && (!best || end > best.end)) best = { price: bars[i][1], end: end };
+    }
+    return best && t0 - best.end <= ANCHOR_MAX_GAP ? best.price : null;
+  }
+
+  function bestPrices(state, quotes, now) {
+    var ph = sessionPhase(state, now), all = quotes && quotes.quotes ? quotes.quotes : null;
+    var rq = all && all.QQQ, rt = all && all.TQQQ, nqRaw = all && all.NQ;
+    var qBase = lastClose(state, rq, ph, state.qqq_prev_close);
+    var tBase = lastClose(state, rt, ph, state.tqqq_prev_close);
+
+    function pick(raw, base) {
+      if (!raw || !base) return null;
+      var s = ph.session, reg = tradeOf(raw), last = tradeOf(raw.last);
+      if (ph.phase === "regular" && reg && reg.t >= ms(s.open_utc) && now - reg.t <= QQQ_MAX_AGE) {
+        return { price: reg.price, t: reg.t, kind: "regular" };
+      }
+      if (ph.phase === "pre" || ph.phase === "post") {
+        var from = ph.phase === "pre" ? ms(s.open_utc) - PRE_SPAN : ms(s.close_utc);
+        if (last && last.t >= from - ANCHOR_SLACK && now - last.t <= EXT_MAX_AGE) return { price: last.price, t: last.t, kind: ph.phase };
+      }
+      return null;
+    }
+    function out(p, base, extra) {
+      var o = { price: p.price, chg: p.price / base.price - 1, kind: p.kind, t: p.t, base: base.price, baseDate: base.date, est: !!p.est };
+      for (var k in extra) o[k] = extra[k];
+      return o;
+    }
+    function closeOut(base, prev) {
+      return { price: base.price, chg: prev ? base.price / prev - 1 : null, kind: "close", t: base.t, base: base.price,
+               baseDate: base.date, est: false };
+    }
+    function via3x(qPrice, qb, tb) { return tb.price * (1 + 3 * (qPrice / qb.price - 1)); }
+
+    var q = pick(rq, qBase), t = pick(rt, tBase), res = { qqq: null, tqqq: null, phase: ph.phase };
+    if (q) res.qqq = out(q, qBase);
+    if (t) res.tqqq = out(t, tBase);
+    // TQQQ 만 멈춤: QQQ 실시간(정규장·시간외)에서 3배 환산
+    if (!t && q && tBase) res.tqqq = out({ price: via3x(q.price, qBase, tBase), t: q.t, kind: q.kind, est: true }, tBase, { via: "qqq" });
+
+    // 선물 추정
+    if (!res.qqq || !res.tqqq) {
+      var f = tradeOf(nqRaw), fut = null;
+      if (f && now - f.t <= NQ_MAX_AGE && qBase) {
+        var lastQ = rq ? tradeOf(rq.last) : null, anchor = lastQ && lastQ.t >= (qBase.t || 0) ? lastQ : { price: qBase.price, t: qBase.t };
+        var F0 = anchor.t != null ? futuresAt(nqRaw.bars, anchor.t) : null;
+        if (F0 == null && state.nq_prev_settle && state.qqq_prev_close) {          // 5분봉이 없으면 state.json 의 기준점 (휴장 갭 칸과 같은 식)
+          anchor = { price: state.qqq_prev_close, t: state.nq_prev_settle_time ? ms(state.nq_prev_settle_time) : null, fromState: true };
+          F0 = state.nq_prev_settle;
+        }
+        if (F0 && f.t > (anchor.t || 0)) {
+          var qEst = anchor.price * (f.price / F0);
+          var lastT = rt ? tradeOf(rt.last) : null, t0p;
+          if (anchor.fromState) t0p = state.tqqq_prev_close ? { price: state.tqqq_prev_close } : null;
+          else if (lastT && Math.abs(lastT.t - anchor.t) <= ANCHOR_MAX_GAP) t0p = lastT;
+          var tEst = t0p ? t0p.price * (1 + 3 * (qEst / anchor.price - 1)) : (tBase ? via3x(qEst, qBase, tBase) : null);
+          fut = { q: qEst, t: tEst, at: f.t, anchor: { p0: anchor.price, t0: anchor.t, f0: F0, f: f.price, fromState: !!anchor.fromState } };
+        }
+      }
+      if (!res.qqq && fut) res.qqq = out({ price: fut.q, t: fut.at, kind: "futures", est: true }, qBase, { anchor: fut.anchor });
+      if (!res.tqqq && fut && fut.t != null && tBase) res.tqqq = out({ price: fut.t, t: fut.at, kind: "futures", est: true }, tBase, { anchor: fut.anchor });
+    }
+
+    // 확정 종가: 그 전 종가 대비 (state 보다 새 종가면 state 종가가 그 전 종가)
+    if (!res.qqq && qBase) res.qqq = closeOut(qBase, qBase.date === state.as_of ? closeBeforeOf(state, state.as_of) : state.qqq_prev_close);
+    if (!res.tqqq && tBase) res.tqqq = closeOut(tBase, tBase.date === state.as_of ? null : state.tqqq_prev_close);
+    return res;
+  }
+
+  /* recent 띠에서 그 날보다 앞선 마지막 종가 */
+  function closeBeforeOf(state, date) {
+    var rs = state.recent || [];
+    for (var i = rs.length - 1; i >= 0; i--) if (rs[i].date < date) return rs[i].close;
+    return null;
+  }
+
   function card(base, ref) {
     var lv = levels(base), prev = base.qqq_prev_close, p = ref ? ref.price : null;
     var e = evaluate(base, p != null ? p : prev);
@@ -303,7 +428,8 @@ var TQHD = (function () {
     FAST: FAST, SLOW: SLOW, HUNT_HALF: HUNT_HALF, HUNT_FULL: HUNT_FULL, HUNT_EXIT: HUNT_EXIT,
     rsiFrom: rsiFrom, rsiStep: rsiStep, liveSma: liveSma, isNight: isNight, nextState: nextState,
     evaluate: evaluate, crossPrice: crossPrice, rsiPrice: rsiPrice, levels: levels, changes: changes,
-    tqqqAt: tqqqAt, marketMode: marketMode, buildView: buildView, card: card, stateText: stateText, action: action,
+    tqqqAt: tqqqAt, marketMode: marketMode, buildView: buildView, card: card,
+    bestPrices: bestPrices, sessionPhase: sessionPhase, futuresAt: futuresAt, stateText: stateText, action: action,
     fmtKst: fmtKst, etDate: etDate
   };
 })();

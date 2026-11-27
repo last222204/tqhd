@@ -183,3 +183,25 @@ def test_chart_failure_falls_back_to_numbers():
     assert 'onFail: chartFail' in js and '$("nums").open = true' in js and '$("chartBox").hidden = true' in js
     assert '<details id="nums" class="nums"><summary>숫자로 보기</summary>' in HTML
     assert HTML.index("assets/chart.js") < HTML.index("assets/app.js")
+
+
+def test_top_prices_come_only_from_best_prices():
+    """맨 위 가격 칸은 core 의 bestPrices 결과만 그린다 (판정용 buildView 와 따로)."""
+    app = read("assets/app.js")
+    body = app.split("function prices()")[1].split("// ── ② 지금 상태")[0]
+    assert "T.bestPrices(state, quotes, now())" in body
+    assert "evaluate" not in body and "v.live" not in body
+    for word in ("실시간", "프리장", "애프터장", "선물 추정", "확정 종가", "정규장 종가", "≈"):
+        assert word in app
+    css = read("assets/style.css")
+    assert ".num-big.dim" in css and ".pbase" in css
+
+
+def test_cache_version_same_everywhere():
+    html = read("index.html")
+    vs = set(re.findall(r"\?v=(\d+)", html))
+    assert len(vs) == 1, vs
+
+
+def read(rel):
+    return (ROOT / rel).read_text(encoding="utf-8")

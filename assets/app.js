@@ -12,6 +12,7 @@
   var t0 = Date.now();
   function now() { return fakeNow != null ? fakeNow + (Date.now() - t0) : Date.now(); }
   var proxyUrl = local ? (qs.get("quotes") || "/quotes") : (cfg.proxyUrl || "");
+  var stateUrl = local && qs.get("state") ? qs.get("state") : "data/state.json";   // localhost 시험용 state 바꾸기
 
   var state = null, quotes = null, lastTry = null, lastOk = null, stateErr = null, chartData = null;
   var $ = function (id) { return document.getElementById(id); };
@@ -64,34 +65,33 @@
     $("mascotImg").src = "assets/mascot-" + s + ".png";
   }
 
-  // ── ① 가격 (TQQQ 왼쪽, QQQ 오른쪽) ─────────
-  /* 확정 종가 하루 전 값 (recent 띠에서 as_of 보다 앞선 마지막 날) */
-  function closeBefore(asOf) {
-    var rs = state.recent || [];
-    for (var i = rs.length - 1; i >= 0; i--) if (rs[i].date < asOf) return rs[i].close;
-    return null;
+  // ── ① 가격 (TQQQ 왼쪽, QQQ 오른쪽) · 보기용: 판정과 무관 ──
+  // 값 고르기는 core 의 T.bestPrices (정규장 → 프리·애프터 → 선물 추정 → 확정 종가, 종목마다 따로)
+  var KIND = { regular: "실시간", pre: "프리장", post: "애프터장", futures: "선물 추정" };
+  function kindTag(p) {
+    if (p.kind === "close") return '<span class="tag off">확정 종가 · ' + md(p.baseDate) + "</span>";
+    return '<span class="tag">' + KIND[p.kind] + "</span>" + '<span class="t num">' + when(p.t) + "</span>";
   }
-  function priceCell(sym, p, chg, est) {
-    return '<div class="pcell" data-sym="' + sym + '"><div class="k">' + sym + (est ? ' <span class="tag est">추정</span>' : "") + "</div>" +
-      '<div class="num num-big">' + usd(p) + "</div>" +
-      '<div class="pchg num ' + cls(chg) + '">' + (chg == null ? "전일 대비 –" : pct(chg)) + "</div></div>";
+  function sameKind(a, b) { return a.kind === b.kind && (a.kind !== "close" || a.baseDate === b.baseDate); }
+  function priceCell(sym, p, ownTag) {
+    var ext = p.kind === "pre" || p.kind === "post" || p.kind === "futures";
+    return '<div class="pcell" data-sym="' + sym + '"><div class="k">' + sym + (p.via ? ' <span class="tag est">추정</span>' : "") +
+      (ownTag ? '<span class="ptag">' + kindTag(p) + "</span>" : "") + "</div>" +
+      '<div class="num num-big' + (p.est ? " dim" : "") + '">' + (p.est ? "≈" : "") + usd(p.price) + "</div>" +
+      '<div class="pchg num ' + cls(p.chg) + '">' + (p.chg == null ? "전일 대비 –" : pct(p.chg)) + "</div>" +
+      (ext ? '<div class="pbase num">정규장 종가 ' + usd(p.base) + " · " + md(p.baseDate) + "</div>" : "") + "</div>";
   }
-  function prices(v) {
-    var L = v.live, qPrev = state.qqq_prev_close, tPrev = state.tqqq_prev_close, h, q, t, qc, tc, est = false, head;
-    if (L && L.ok) {
-      q = L.price;
-      if (v.tqqq) t = v.tqqq.price; else { t = T.tqqqAt(state, q); est = true; }
-      qc = q / qPrev - 1; tc = t / tPrev - 1;
-      head = '<span class="tag">' + (L.closing ? "오늘 종가" : "실시간") + '</span><span class="t num">' + when(L.t) + "</span>";
-    } else {
-      q = qPrev; t = tPrev;
-      var before = closeBefore(state.as_of);
-      qc = before ? q / before - 1 : null; tc = null;
-      head = '<span class="tag off">확정 종가 · ' + md(state.as_of) + "</span>";
+  function prices() {
+    var b = T.bestPrices(state, quotes, now()), t = b.tqqq, q = b.qqq, h = "";
+    if (!t || !q) { $("prices").innerHTML = '<div class="off-msg">가격 없음</div>'; return; }
+    var shared = sameKind(t, q);
+    if (shared) {
+      var tt = t.kind === "close" ? t : (t.t >= q.t ? t : q);       // 같은 종류면 둘 중 늦은 시각
+      h += '<div class="ch">' + kindTag({ kind: t.kind, t: tt.t, baseDate: t.baseDate }) + "</div>";
     }
-    h = '<div class="ch">' + head + "</div>";
-    h += '<div class="pc">' + priceCell("TQQQ", t, tc, est) + priceCell("QQQ", q, qc, false) + "</div>";
+    h += '<div class="pc">' + priceCell("TQQQ", t, !shared) + priceCell("QQQ", q, !shared) + "</div>";
     $("prices").innerHTML = h;
+    window.__prices = b;
   }
 
   // ── ② 지금 상태 ───────────────────────────
@@ -406,6 +406,7 @@
       "<p><b>판정</b> 장중 상태는 참고용. 주문은 마감 직전 종가로 판단한다. 장중에 선을 넘었다가 종가에 되돌아오는 경우가 있다.</p>" +
       "<p><b>룰</b> 50·200일선 하나라도 위(초과) = 낮(TQQQ 100%), 둘 다 같거나 아래 = 밤(현금). 밤의 비중은 RSI2: 5 미만 100%, 5~15 50%, 15~50 직전 유지(사냥 중), 50 초과 전량 매도. 사냥 중 선 회복 = 청산 없이 낮. RSI2 = Wilder 기간 2.</p>" +
       "<p><b>가격</b> 이동평균·RSI2·$ 는 전부 배당조정(수정주가) 종가 기준이라 증권사 차트의 $ 와 다를 수 있다. 판단은 % 로. 기준선 표의 가격은 그 가격으로 마감하면 상태가 바뀌는 값('선 …'은 지금 이동평균 값).</p>" +
+      "<p><b>맨 위 가격</b> 보기용 (판정은 정규장 가격·종가로만). 정규장 실시간 → 프리장·애프터장 체결(10분 안) → 선물 추정(≈, 가장 최근 체결 × NQ 지금 ÷ 그 시각 NQ 5분봉) → 확정 종가 순으로 되는 것을 쓴다. 큰 % 는 가장 최근 정규장 종가 대비.</p>" +
       "<p><b>추정</b> TQQQ 실시간 시세가 없으면 TQQQ = 전일 종가 × (1 + 3 × QQQ 변화율)로 추정하고 '추정'이라고 표시한다. 기준선 표의 TQQQ 값도 같은 식이다.</p>" +
       "<p><b>휴장 갭</b> 맨 아래 카드. 예상 시가 = 전일 종가 × (NQ 선물 ÷ 전일 현물 마감 시각 NQ " + num(state.nq_prev_settle, 2) + "). 선물과 현물은 베이시스 차이가 있어 어긋날 수 있다. 정규장 중에는 계산만 하고 회색으로 둔다. 기준선은 휴장 때도 예상 시가가 아니라 확정 종가 기준.</p>" +
       "<p><b>데이터</b> 기준: yfinance 일봉, GitHub Actions 가 매일 07:00 KST 에 기록 (마지막 " + v.asOf + " 종가, " + when(v.generatedAt) + " 기록). " +
@@ -419,7 +420,7 @@
       return;
     }
     var v = T.buildView(state, quotes, now());
-    prices(v); banner(v); todo(v); alerts(v); card(v); fx(v);
+    prices(); banner(v); todo(v); alerts(v); card(v); fx(v);
     hist(); regime(); gapCard(v); resolve(); info(v);
     window.__view = v;
   }
@@ -437,7 +438,7 @@
   function loadState() {
     var c = get("data/chart.json?t=" + Date.now()).then(function (d) { chartData = d && d.rows && d.rows.length ? d : null; if (!chartData) chartFail(); },
       function () { chartData = null; chartFail(); });
-    return get("data/state.json?t=" + Date.now()).then(function (s) { state = s; stateErr = null; },
+    return get(stateUrl + (stateUrl.indexOf("?") < 0 ? "?" : "&") + "t=" + Date.now()).then(function (s) { state = s; stateErr = null; },
       function (e) { stateErr = String(e.message || e); }).then(function () { return c; });
   }
 
