@@ -169,6 +169,21 @@ details summary::-webkit-details-marker { display: none; }
 .rsi .v { font-size: 18px; font-weight: 600; }
 .rsi .v small { font-size: 11px; color: var(--dim); font-weight: 500; margin-left: 4px; }
 
+/* ③ 차트 */
+.ch2 { margin-top: 8px; }
+.chartbox { position: relative; margin: 8px -4px 0; height: 410px; }
+.chartbox[hidden] { display: none; }
+.chartel { width: 100%; height: 100%; }
+.clegend { position: absolute; left: 8px; top: 5px; z-index: 3; display: flex; gap: 8px; font-size: 11px; pointer-events: none; }
+.ctip { position: absolute; left: 6px; top: 24px; z-index: 3; max-width: calc(100% - 80px); padding: 4px 7px; border-radius: 8px;
+  background: rgba(22, 25, 31, 0.92); border: 1px solid var(--line); font-size: 11px; color: var(--sub); line-height: 1.45; pointer-events: none; }
+.ctip[hidden] { display: none; }
+.ctip .k { color: var(--muted); }
+.cnote { margin: 4px 2px 0; font-size: 11px; color: var(--dim); }
+.nums { margin-top: 8px; border-top: 1px solid var(--line); }
+.nums summary { cursor: pointer; padding: 8px 0 2px; font-size: 12px; font-weight: 500; color: var(--muted); }
+.nums[open] summary { color: var(--sub); }
+
 /* ⑤ 휴장 갭 (정규장 중에는 회색) */
 .gp { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; margin: 8px 0 2px; }
 .gp > div { background: rgba(255, 255, 255, .035); border-radius: 9px; padding: 5px 8px; min-width: 0; }

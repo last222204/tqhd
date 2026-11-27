@@ -22,6 +22,7 @@ import tqhd as T  # noqa: E402
 ROOT = Path(__file__).resolve().parent.parent
 HISTORY_START = "1999-01-01"
 RECENT_DAYS = 60
+CHART_DAYS = 400
 HISTORY_COLS = ["date", "qqq_close", "sma50", "sma200", "rsi2", "state", "weight", "recorded_at", "source"]
 ET = "America/New_York"
 
@@ -258,6 +259,24 @@ def recent_from_history(path: Path, n: int = RECENT_DAYS) -> list:
              "state": r["state"], "weight": int(r["weight"]), "source": r["source"]} for r in rows]
 
 
+def chart_rows(frame: pd.DataFrame, tqqq: pd.Series, n: int = CHART_DAYS) -> list:
+    """차트용 최근 n 거래일. compute() 결과(배당조정 종가·50/200 단순이평·Wilder RSI2·상태)를 그대로 옮긴다."""
+    f = frame.dropna(subset=["state"]).iloc[-n:]
+    rows = []
+    for d, r in f.iterrows():
+        t = tqqq.get(d) if tqqq is not None else None
+        rows.append({"date": str(d.date()), "qqq": _r(r["close"], 4),
+                     "tqqq": None if t is None or pd.isna(t) else round(float(t), 4),
+                     "sma50": _r(r["sma50"], 4), "sma200": _r(r["sma200"], 4), "rsi2": _r(r["rsi2"], 4),
+                     "state": r["state"], "weight": int(r["weight"])})
+    return rows
+
+
+def write_chart(path: Path, frame: pd.DataFrame, tqqq: pd.Series, as_of: str):
+    body = {"as_of": as_of, "rows": chart_rows(frame, tqqq)}
+    path.write_text(json.dumps(body, ensure_ascii=False, separators=(",", ":")) + "\n", encoding="utf-8", newline="\n")
+
+
 def write_prices(path: Path, qqq: pd.Series, tqqq: pd.Series):
     """오프라인 검증(교차 검증 60일)용 일봉 사본."""
     df = pd.DataFrame({"qqq": qqq, "tqqq": tqqq})
@@ -292,6 +311,7 @@ def main(argv=None):
     state["recent"] = recent_from_history(out / "history.csv")
     (out / "state.json").write_text(json.dumps(state, ensure_ascii=False, indent=1) + "\n", encoding="utf-8", newline="\n")
     write_prices(out / "prices.csv", qqq_done, tqqq.loc[tqqq.index.isin(qqq_done.index)])
+    write_chart(out / "chart.json", frame, tqqq, state["as_of"])
     c = state["confirmed"]
     print(f"기준 {state['as_of']} · {c['state']} {c['weight']}% · RSI2 {c['rsi2']:.2f} · "
           f"history +{added}줄 · NQ {state['nq_prev_settle']} ({state['nq_prev_settle_source']})")

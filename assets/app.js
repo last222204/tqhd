@@ -13,7 +13,7 @@
   function now() { return fakeNow != null ? fakeNow + (Date.now() - t0) : Date.now(); }
   var proxyUrl = local ? (qs.get("quotes") || "/quotes") : (cfg.proxyUrl || "");
 
-  var state = null, quotes = null, lastTry = null, lastOk = null, stateErr = null;
+  var state = null, quotes = null, lastTry = null, lastOk = null, stateErr = null, chartData = null;
   var $ = function (id) { return document.getElementById(id); };
 
   // 기준선 % 기준 (장중에만 고를 수 있음): "ref" = 현재가 대비, "prev" = 전일 종가 대비
@@ -169,25 +169,40 @@
     return '<div class="pl"><span class="s">' + sym + '</span><span class="num">' + usd(p) + '</span><span class="num ' + cls(d) + '">' + pct(d) + "</span></div>";
   }
 
+  function seg(attr, items, cur) {
+    return '<span class="seg">' + items.map(function (x) {
+      return '<button type="button" data-' + attr + '="' + x[0] + '"' + (x[0] === cur ? ' class="on"' : "") + ">" + x[1] + "</button>";
+    }).join("") + "</span>";
+  }
+
   function card(v) {
-    var el = $("card");
     var c = isLive(v) ? v.card : (v.mode === "gap" ? T.card(state, null) : null);
-    if (!c) { el.innerHTML = '<div class="prev">기준 데이터가 멈춰 계산하지 않습니다</div>'; return; }
+    if (!c) {
+      $("cardHead").innerHTML = '<div class="prev">기준 데이터가 멈춰 계산하지 않습니다</div>';
+      $("chartBox").hidden = true; $("chartNote").hidden = true; $("cardBoxes").innerHTML = ""; $("numsBody").innerHTML = "";
+      return;
+    }
     var ref = c.ref, useRef = !!ref && basis === "ref";
     var qBase = useRef ? ref.price : c.prev;
     var tBase = useRef ? (v.tqqq ? v.tqqq.price : T.tqqqAt(state, ref.price)) : state.tqqq_prev_close;
     var h = "";
 
+    // 1) 머리: 태그 + 현재가/전일 토글, 아래 줄에 QQQ/TQQQ 보기 + 기간
     var tag = !ref ? '<span class="tag off">전일 종가</span>' : ref.kind === "now" ? '<span class="tag">실시간</span>' : '<span class="tag">오늘 종가</span>';
-    var sw = ref
-      ? '<span class="seg"><button type="button" data-basis="ref"' + (useRef ? ' class="on"' : "") + '>현재가 대비</button>' +
-        '<button type="button" data-basis="prev"' + (!useRef ? ' class="on"' : "") + ">전일 종가 대비</button></span>"
-      : '<span class="basis-txt">전일 종가 대비</span>';
-    h += '<div class="ch">' + tag + sw + "</div>";
+    var sw = ref ? seg("basis", [["ref", "현재가 대비"], ["prev", "전일 종가 대비"]], useRef ? "ref" : "prev")
+                 : '<span class="basis-txt">전일 종가 대비</span>';
+    var ch = window.TQHD_CHART, chartOn = ch && !ch.failed() && chartData;
+    $("cardHead").innerHTML = '<div class="ch">' + tag + sw + "</div>" +
+      (chartOn ? '<div class="ch ch2">' + seg("view", [["qqq", "QQQ 보기"], ["tqqq", "TQQQ 보기"]], ch.view()) +
+                 seg("range", [["3m", "3개월"], ["6m", "6개월"], ["1y", "1년"]], ch.range()) + "</div>" : "");
 
-    // 게이지: QQQ 위치는 언제나 지금 가격(없으면 확정 종가) 기준
-    h += '<div class="gcap">QQQ 가 선보다 몇 % 위/아래</div>';
-    h += gauges(c, ref ? ref.price : c.prev, ref ? c.rsi2 : v.confirmed.rsi2);
+    // 2) 차트
+    if (chartOn) {
+      $("chartBox").hidden = false;
+      ch.update(chartCtx(v, c, qBase, tBase));
+    } else {
+      $("chartBox").hidden = true; $("chartNote").hidden = true;
+    }
 
     // 상태가 바뀌는 가장 가까운 가격
     function box(x, arrow, word) {
@@ -197,7 +212,11 @@
       return '<div class="cb">' + head + '<div class="to">' + em(x.state) + " " + U.word(x.state, x.weight) + "</div>" +
         pline("TQQQ", tq, tq / tBase - 1) + pline("QQQ", x.price, x.price / qBase - 1) + "</div>";
     }
-    h += '<div class="chg">' + box(c.changes.down, "↓", "내려가면") + box(c.changes.up, "↑", "올라가면") + "</div>";
+    $("cardBoxes").innerHTML = '<div class="chg">' + box(c.changes.down, "↓", "내려가면") + box(c.changes.up, "↑", "올라가면") + "</div>";
+
+    // 4) 숫자로 보기 (접힘): 게이지 + 표 + RSI2
+    h += '<div class="gcap">QQQ 가 선보다 몇 % 위/아래</div>';
+    h += gauges(c, ref ? ref.price : c.prev, ref ? c.rsi2 : v.confirmed.rsi2);
 
     // 표: [이름 | TQQQ | QQQ]
     var by = {};
@@ -215,14 +234,48 @@
 
     h += '<div class="rsi"><span class="n">' + ICON.rsi + 'RSI2</span><span class="v num">' + num(ref ? c.rsi2 : v.confirmed.rsi2, 1) +
          "<small>" + (ref ? (ref.kind === "close" ? "오늘 종가" : "지금") : "확정") + "</small></span></div>";
-    el.innerHTML = h;
+    $("numsBody").innerHTML = h;
+  }
+
+  // 차트에 넘길 값 (그리기만 chart.js 가 한다)
+  var SHORT = { sma50: "☀️50일", sma200: "☀️200일", hunt_half: "🏹절반", hunt_full: "🏹전액", hunt_exit: "🌙청산" };
+  function chartCtx(v, c, qBase, tBase) {
+    var live = null, gap = null, L = v.live;
+    if (isLive(v) && L && L.ok) {
+      live = { date: v.session.date, qqq: L.price, tqqq: v.tqqq ? v.tqqq.price : T.tqqqAt(state, L.price),
+               sma50: L.eval.sma50, sma200: L.eval.sma200, rsi2: L.eval.rsi2, state: L.eval.state, weight: L.eval.weight };
+    }
+    if (v.mode === "gap" && v.gap && v.gap.ok && v.next) {
+      gap = { date: v.next.date, qqq: v.gap.qqqOpen, tqqq: v.gap.tqqqOpen, rsi2: v.gap.eval.rsi2, state: v.gap.eval.state, weight: v.gap.eval.weight };
+    }
+    var lines = c.rows.map(function (r) {
+      return { key: r.key, name: SHORT[r.key], qqq: r.price, tqqq: r.tqqq, qPct: r.price / qBase - 1, tPct: r.tqqq / tBase - 1 };
+    });
+    return { rows: chartData.rows, asOf: chartData.as_of, live: live, gap: gap, lines: lines,
+             curState: live ? live.state : v.confirmed.state };
   }
   $("card").addEventListener("click", function (e) {
-    var b = e.target.closest && e.target.closest("[data-basis]");
+    var b = e.target.closest && e.target.closest("[data-basis],[data-view],[data-range]");
     if (!b) return;
-    setBasis(b.getAttribute("data-basis"));
+    if (b.hasAttribute("data-basis")) setBasis(b.getAttribute("data-basis"));
+    if (b.hasAttribute("data-view")) window.TQHD_CHART.setView(b.getAttribute("data-view"));
+    if (b.hasAttribute("data-range")) window.TQHD_CHART.setRange(b.getAttribute("data-range"));
     render();
   });
+
+  // 차트를 못 그리면(라이브러리·chart.json 실패) 차트 칸을 숨기고 숫자로 보기를 펼친다
+  var chartFailedOnce = false;
+  function chartFail() {
+    $("chartBox").hidden = true; $("chartNote").hidden = true;
+    if (!chartFailedOnce) { chartFailedOnce = true; $("nums").open = true; }
+    if (state) render();
+  }
+  if (window.TQHD_CHART) {
+    window.TQHD_CHART.init({ el: $("chartEl"), legendEl: $("chartLegend"), tipEl: $("chartTip"), noteEl: $("chartNote"), onFail: chartFail,
+                             badUrl: local && qs.get("nochart") ? "/no-such/lightweight-charts.js" : null });
+  } else {
+    chartFail();
+  }
 
   // 게이지 세 개
   var LINE_RANGE = 0.10;                                   // 선 ±10% 를 양 끝으로 (넘으면 끝에 붙음)
@@ -382,8 +435,10 @@
   }
 
   function loadState() {
+    var c = get("data/chart.json?t=" + Date.now()).then(function (d) { chartData = d && d.rows && d.rows.length ? d : null; if (!chartData) chartFail(); },
+      function () { chartData = null; chartFail(); });
     return get("data/state.json?t=" + Date.now()).then(function (s) { state = s; stateErr = null; },
-      function (e) { stateErr = String(e.message || e); });
+      function (e) { stateErr = String(e.message || e); }).then(function () { return c; });
   }
 
   function poll() {

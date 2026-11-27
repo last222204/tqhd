@@ -78,3 +78,26 @@ def test_strip_reads_history_log(prices, tmp_path):
     rec = U.recent_from_history(path)
     assert len(rec) == 60 and rec[-1]["date"] == "2026-11-25" and rec[-1]["source"] == "역산"
     assert set(rec[-1]) == {"date", "close", "rsi2", "state", "weight", "source"}
+
+
+def test_chart_rows_shape(prices):
+    p = prices.loc[:"2026-11-25"]
+    rows = U.chart_rows(U.compute(p["qqq"]), p["tqqq"])
+    assert len(rows) == 400 and rows[-1]["date"] == "2026-11-25"
+    assert set(rows[-1]) == {"date", "qqq", "tqqq", "sma50", "sma200", "rsi2", "state", "weight"}
+    assert all(r["date"] < s["date"] for r, s in zip(rows, rows[1:]))
+
+
+def test_chart_json_matches_confirmed_state():
+    """data/chart.json 마지막 줄 = data/state.json 의 confirmed (같은 데이터·같은 계산)."""
+    import json
+    from pathlib import Path
+    data = Path(__file__).resolve().parent.parent / "data"
+    st = json.loads((data / "state.json").read_text(encoding="utf-8"))
+    ch = json.loads((data / "chart.json").read_text(encoding="utf-8"))
+    last, c = ch["rows"][-1], st["confirmed"]
+    assert ch["as_of"] == st["as_of"] == last["date"] == c["date"]
+    for k_chart, k_conf in (("qqq", "close"), ("sma50", "sma50"), ("sma200", "sma200"), ("rsi2", "rsi2")):
+        assert abs(last[k_chart] - c[k_conf]) <= 1e-3, k_chart
+    assert last["state"] == c["state"] and last["weight"] == c["weight"]
+    assert abs(last["tqqq"] - st["tqqq_prev_close"]) <= 1e-3

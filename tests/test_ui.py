@@ -159,3 +159,27 @@ def test_gauges_are_plain_divs_6px():
     assert re.search(r"\.gb \{[^}]*height: 6px", css) and "border-radius: 3px" in css
     js = (ROOT / "assets" / "app.js").read_text(encoding="utf-8")
     assert "[5, 15, 50].forEach" in js and "조기 폐장" in js
+
+
+# ── 기준선 차트 ─────────────────────────────────
+CHART = (ROOT / "assets" / "chart.js").read_text(encoding="utf-8")
+
+
+def test_chart_library_pinned_with_attribution():
+    assert 'var VERSION = "5.2.1"' in CHART and "lightweight-charts@\" + VERSION + \"/dist/" in CHART
+    assert 'SRI = "sha384-' in CHART and "s.integrity = SRI" in CHART
+    assert "attributionLogo: true" in CHART
+
+
+def test_chart_touch_and_panes():
+    assert "vertTouchDrag: false" in CHART and "horzTouchDrag: true" in CHART and "pinch: true" in CHART
+    assert "panes[1].setHeight(100)" in CHART and "minValue: 0, maxValue: 100" in CHART
+    live = CHART[CHART.index("function live(c)"):CHART.index("function applyRange")]
+    assert ".update(" in live and "setData" not in live                    # 30초 갱신은 update 로만
+
+
+def test_chart_failure_falls_back_to_numbers():
+    js = (ROOT / "assets" / "app.js").read_text(encoding="utf-8")
+    assert 'onFail: chartFail' in js and '$("nums").open = true' in js and '$("chartBox").hidden = true' in js
+    assert '<details id="nums" class="nums"><summary>숫자로 보기</summary>' in HTML
+    assert HTML.index("assets/chart.js") < HTML.index("assets/app.js")
