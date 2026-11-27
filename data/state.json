@@ -1,32 +1,32 @@
 {
  "version": 1,
- "generated_at": "2026-11-26T14:48:44Z",
+ "generated_at": "2026-11-27T03:57:35Z",
  "as_of": "2026-11-25",
  "as_of_close_utc": "2026-11-25T21:00:00Z",
  "price_basis": "배당조정 종가 (yfinance auto_adjust)",
  "qqq_prev_close": 633.9299926757812,
  "sum_prev_49": 34634.809143066406,
- "sum_prev_199": 135897.7569580078,
+ "sum_prev_199": 135897.75720214844,
  "wilder_avg_gain": 5.37365860554388,
  "wilder_avg_loss": 8.18584017038339,
  "prev_state": "night",
  "prev_weight": 0,
  "tqqq_prev_close": 45.279998779296875,
- "nq_prev_settle": 26105.5,
+ "nq_prev_settle": 26104.75,
  "nq_prev_settle_time": "2026-11-25T21:00:00Z",
  "nq_prev_settle_source": "5분봉",
  "confirmed": {
   "date": "2026-11-25",
   "close": 633.929993,
   "sma50": 707.019657,
-  "sma200": 682.54393,
+  "sma200": 682.543931,
   "rsi2": 39.630216,
   "state": "night",
   "weight": 0
  },
  "usdkrw": {
-  "price": 1343.36,
-  "date": "2026-11-26"
+  "price": 1341.38,
+  "date": "2026-11-27"
  },
  "night_ratio": {
   "1m": 61.9,
